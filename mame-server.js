@@ -862,18 +862,19 @@ function defaultControlProfile(kind = "arcade-usb") {
     kind,
     provider: kind === "playstation" ? "winhybrid" : kind === "directinput" || kind === "dragonrise" ? "dinput" : "auto",
     deviceMatch: kind === "dragonrise" ? { vendorId: "0079", productId: "0006", names: ["Generic USB Joystick", "DragonRise"] } : null,
+    padMap: {}, deviceMap: {}, joycodeMap: {},
     bindings: {
       UI_MENU: "KEYCODE_TAB OR " + b(1, 10), UI_CANCEL: "KEYCODE_ESC OR " + b(1, 7), UI_SELECT: "KEYCODE_ENTER OR " + b(1, 1),
-      UI_UP: "KEYCODE_UP OR JOYCODE_1_HATUP OR JOYCODE_1_YAXIS_UP_SWITCH", UI_DOWN: "KEYCODE_DOWN OR JOYCODE_1_HATDOWN OR JOYCODE_1_YAXIS_DOWN_SWITCH",
-      UI_LEFT: "KEYCODE_LEFT OR JOYCODE_1_HATLEFT OR JOYCODE_1_XAXIS_LEFT_SWITCH", UI_RIGHT: "KEYCODE_RIGHT OR JOYCODE_1_HATRIGHT OR JOYCODE_1_XAXIS_RIGHT_SWITCH",
+      UI_UP: "KEYCODE_UP OR JOYCODE_1_HAT1UP OR JOYCODE_1_YAXIS_UP_SWITCH", UI_DOWN: "KEYCODE_DOWN OR JOYCODE_1_HAT1DOWN OR JOYCODE_1_YAXIS_DOWN_SWITCH",
+      UI_LEFT: "KEYCODE_LEFT OR JOYCODE_1_HAT1LEFT OR JOYCODE_1_XAXIS_LEFT_SWITCH", UI_RIGHT: "KEYCODE_RIGHT OR JOYCODE_1_HAT1RIGHT OR JOYCODE_1_XAXIS_RIGHT_SWITCH",
       START1: "KEYCODE_1 OR JOYCODE_1_BUTTON9", COIN1: "KEYCODE_5 OR JOYCODE_1_BUTTON10",
-      P1_JOYSTICK_UP: "KEYCODE_UP OR JOYCODE_1_YAXIS_UP_SWITCH OR JOYCODE_1_HATUP", P1_JOYSTICK_DOWN: "KEYCODE_DOWN OR JOYCODE_1_YAXIS_DOWN_SWITCH OR JOYCODE_1_HATDOWN",
-      P1_JOYSTICK_LEFT: "KEYCODE_LEFT OR JOYCODE_1_XAXIS_LEFT_SWITCH OR JOYCODE_1_HATLEFT", P1_JOYSTICK_RIGHT: "KEYCODE_RIGHT OR JOYCODE_1_XAXIS_RIGHT_SWITCH OR JOYCODE_1_HATRIGHT",
+      P1_JOYSTICK_UP: "KEYCODE_UP OR JOYCODE_1_YAXIS_UP_SWITCH OR JOYCODE_1_HAT1UP", P1_JOYSTICK_DOWN: "KEYCODE_DOWN OR JOYCODE_1_YAXIS_DOWN_SWITCH OR JOYCODE_1_HAT1DOWN",
+      P1_JOYSTICK_LEFT: "KEYCODE_LEFT OR JOYCODE_1_XAXIS_LEFT_SWITCH OR JOYCODE_1_HAT1LEFT", P1_JOYSTICK_RIGHT: "KEYCODE_RIGHT OR JOYCODE_1_XAXIS_RIGHT_SWITCH OR JOYCODE_1_HAT1RIGHT",
       P1_BUTTON1: "KEYCODE_LCONTROL OR " + b(p1, 1), P1_BUTTON2: "KEYCODE_LALT OR " + b(p1, 2), P1_BUTTON3: "KEYCODE_SPACE OR " + b(p1, 3), P1_BUTTON4: "KEYCODE_LSHIFT OR " + b(p1, 4),
       P1_BUTTON5: "KEYCODE_Z OR " + b(p1, 5), P1_BUTTON6: "KEYCODE_X OR " + b(p1, 6), P1_BUTTON7: "KEYCODE_C OR " + b(p1, 7), P1_BUTTON8: "KEYCODE_V OR " + b(p1, 8),
       START2: "KEYCODE_2 OR JOYCODE_2_BUTTON9", COIN2: "KEYCODE_6 OR JOYCODE_2_BUTTON10",
-      P2_JOYSTICK_UP: "KEYCODE_8_PAD OR JOYCODE_2_YAXIS_UP_SWITCH OR JOYCODE_2_HATUP", P2_JOYSTICK_DOWN: "KEYCODE_2_PAD OR JOYCODE_2_YAXIS_DOWN_SWITCH OR JOYCODE_2_HATDOWN",
-      P2_JOYSTICK_LEFT: "KEYCODE_4_PAD OR JOYCODE_2_XAXIS_LEFT_SWITCH OR JOYCODE_2_HATLEFT", P2_JOYSTICK_RIGHT: "KEYCODE_6_PAD OR JOYCODE_2_XAXIS_RIGHT_SWITCH OR JOYCODE_2_HATRIGHT",
+      P2_JOYSTICK_UP: "KEYCODE_8_PAD OR JOYCODE_2_YAXIS_UP_SWITCH OR JOYCODE_2_HAT1UP", P2_JOYSTICK_DOWN: "KEYCODE_2_PAD OR JOYCODE_2_YAXIS_DOWN_SWITCH OR JOYCODE_2_HAT1DOWN",
+      P2_JOYSTICK_LEFT: "KEYCODE_4_PAD OR JOYCODE_2_XAXIS_LEFT_SWITCH OR JOYCODE_2_HAT1LEFT", P2_JOYSTICK_RIGHT: "KEYCODE_6_PAD OR JOYCODE_2_XAXIS_RIGHT_SWITCH OR JOYCODE_2_HAT1RIGHT",
       P2_BUTTON1: "KEYCODE_A OR " + b(p2, 1), P2_BUTTON2: "KEYCODE_S OR " + b(p2, 2), P2_BUTTON3: "KEYCODE_Q OR " + b(p2, 3), P2_BUTTON4: "KEYCODE_W OR " + b(p2, 4),
       P2_BUTTON5: "KEYCODE_E OR " + b(p2, 5), P2_BUTTON6: "KEYCODE_R OR " + b(p2, 6), P2_BUTTON7: "KEYCODE_T OR " + b(p2, 7), P2_BUTTON8: "KEYCODE_Y OR " + b(p2, 8),
     }, updatedAt: Date.now(),
@@ -883,12 +884,12 @@ function readControlProfile() {
   try {
     const raw = JSON.parse(fs.readFileSync(CONTROL_PROFILE_FILE, "utf8"));
     const base = defaultControlProfile(raw.kind || "arcade-usb");
-    return { ...base, ...raw, bindings: { ...base.bindings, ...(raw.bindings || {}) } };
+    return { ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings: { ...base.bindings, ...(raw.bindings || {}) } };
   } catch { return defaultControlProfile("arcade-usb"); }
 }
 function saveControlProfile(profile) {
   const base = defaultControlProfile(profile.kind || "arcade-usb");
-  const clean = { ...base, ...profile, bindings: { ...base.bindings, ...(profile.bindings || {}) }, updatedAt: Date.now() };
+  const clean = { ...base, ...profile, padMap: profile.padMap || {}, deviceMap: profile.deviceMap || {}, joycodeMap: profile.joycodeMap || {}, bindings: { ...base.bindings, ...(profile.bindings || {}) }, updatedAt: Date.now() };
   for (const action of CONTROL_ACTIONS) clean.bindings[action] = String(clean.bindings[action] || base.bindings[action]);
   fs.writeFileSync(CONTROL_PROFILE_FILE, JSON.stringify(clean, null, 2), "utf8");
   return clean;
@@ -897,12 +898,22 @@ function writeDefaultControls(mameDir, profile = readControlProfile()) {
   const cfgDir = path.join(mameDir, "cfg");
   if (!fs.existsSync(cfgDir)) fs.mkdirSync(cfgDir, { recursive: true });
   const map = CONTROL_ACTIONS.map((action) => [action, profile.bindings[action]]);
-  const ports = map.map(([t, k]) => `            <port type="${t}"><newseq type="standard">${k}</newseq></port>`).join("\n");
+  const xmlEscape = (value) => String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const mapEntries = [];
+  const seenDevices = new Set();
+  for (const value of Object.values(profile.deviceMap || {})) {
+    const id = typeof value === "string" ? value : value?.mameId || value?.id || "";
+    const controller = typeof value === "object" ? value?.controller || "" : "";
+    if (!id || !/^JOYCODE_\d+$/.test(controller) || seenDevices.has(id)) continue;
+    seenDevices.add(id);
+    mapEntries.push(`            <mapdevice device="${xmlEscape(id)}" controller="${controller}" />`);
+  }
+  const ports = map.map(([t, k]) => `            <port type="${t}"><newseq type="standard">${xmlEscape(k)}</newseq></port>`).join("\n");
   const xml = `<?xml version="1.0"?>
 <mameconfig version="10">
     <system name="default">
         <input>
-${ports}
+${mapEntries.join("\n")}${mapEntries.length ? "\n" : ""}${ports}
         </input>
     </system>
 </mameconfig>
@@ -1784,7 +1795,7 @@ async function handleRequest(req, res) {
       // Dá tempo para detectar encerramento imediato, DLL ausente ou argumento rejeitado.
       await new Promise((resolve) => setTimeout(resolve, 1200));
       if (child.exitCode !== null) {
-        const safeArgs = [rom, "-skip_gameinfo", "-nowindow", "-nomaximize", "-noreadconfig", ...VIDEO_ARGS, ...JOYSTICK_ARGS];
+        const safeArgs = [rom, "-skip_gameinfo", "-nowindow", "-nomaximize", "-noreadconfig", ...VIDEO_ARGS, ...joystickArgs()];
         if (romsDir) safeArgs.push("-rompath", romsDir);
         child = spawnMame(safeArgs);
         fallback = true;

@@ -55,3 +55,23 @@ A pesquisa também mostra que o mesmo VID/PID pode aparecer em placas fisicament
 
 [1] [SDL Issue #3197 — Different game controllers, different mappings, same GUID](https://github.com/libsdl-org/SDL/issues/3197)
 [2] [MAME controller configuration documentation](https://docs.mamedev.org/advanced/ctrlr_config.html)
+
+
+## Achados adicionais do segundo diagnóstico
+
+O diagnóstico confirmou seis problemas relacionados: tokens HAT sem índice (`JOYCODE_1_HATUP` em vez de `JOYCODE_1_HAT1UP`), composição de captura com `OR` inicial quando o binding anterior está vazio, captura de P2 escrevendo JOYCODE_2 mesmo quando o segundo player compartilha o primeiro dispositivo, ausência de `mapdevice` no arquivo ctrlr, dependência instável entre índice da Web Gamepad API e índice do MAME, e filtragem de gamepads que reindexa buracos de `navigator.getGamepads()`.
+
+A correção deve incluir sanitização/whitelist de tokens, mapa explícito de dispositivos por jogador, suporte a dois players no mesmo JOYCODE_1, captura limpa de sequências, regex HAT numerado e emissão de `mapdevice` somente no arquivo ctrlr indicado por `-ctrlr`. Os arquivos principais são `dist/launcher.html`, `mame-server.js`, `controls-profile.json`, `emulators/mame168/ctrlr/master-games-arcade.cfg` e `emulators/mame168/mame.ini`.
+
+
+## Confirmação na documentação oficial do MAME
+
+A documentação oficial confirma que o arquivo `ctrlr` é XML, deve estar em `ctrlrpath` e é selecionado por `ctrlr` sem a extensão. Ela também confirma que `mapdevice` só tem efeito dentro do arquivo de controlador selecionado por `-ctrlr`, usando `device` e `controller`, e que os IDs podem variar conforme enumeração, USB, Bluetooth, hubs e provedor de entrada. [3] [4]
+
+A mesma documentação mostra que sequências `newseq` podem combinar entradas com `OR`, mas os tokens dependem da versão, dispositivos, provedor e configurações. Portanto, o teste deve validar a build MAME 0.168.2 específica, e não somente a documentação moderna. [3]
+
+Referências:
+
+[3] [MAME Controller Configuration Files](https://docs.mamedev.org/advanced/ctrlr_config.html)
+[4] [MAME Stable Controller IDs](https://docs.mamedev.org/advanced/devicemap.html)
+[5] [MAME Universal Command-line Options](https://docs.mamedev.org/commandline/commandline-all.html)
