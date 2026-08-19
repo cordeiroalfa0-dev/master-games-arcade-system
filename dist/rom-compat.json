@@ -1,0 +1,1077 @@
+{
+  "generated_for": "MAMEPlus 0.168.2",
+  "sets": {
+    "1942": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "1943": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "3wonders": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "adults": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "aladmdb": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "altbeast": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "androdun": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "aof3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ar_bios": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "avsp": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "avspu": {
+      "kind": "clone",
+      "requires": [
+        "avsp.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "awbios": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "bjourney": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "breakrev": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "btoads": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "bub68705": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "captcommb": {
+      "kind": "clone",
+      "requires": [
+        "captcomm.zip"
+      ],
+      "status": "missing-parent",
+      "note": "Clone de captcomm: set pai ausente no pacote"
+    },
+    "cawing": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "contra": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "csclub": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ctribe": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "dbz2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ddragon": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ddragon2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ddragon3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ddsom": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ddtod": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "deadconx": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "dino": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "dinoj": {
+      "kind": "clone",
+      "requires": [
+        "dino.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "doubledr": {
+      "kind": "clone",
+      "requires": [
+        "ddragon.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "dstlk": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "eightman": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "elvactr": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "fatfursp": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "fatfury3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ffight": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ffight2b": {
+      "kind": "clone",
+      "requires": [
+        "ffight2.zip"
+      ],
+      "status": "missing-parent",
+      "note": "Clone de ffight2: set pai ausente no pacote"
+    },
+    "ga2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "galaga": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "galaga88": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "garou": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ghouls": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "goldnaxe": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "hsf2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "joemacr": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "jojobane": {
+      "kind": "game",
+      "requires": [
+        "cap-jjm-*.chd"
+      ],
+      "status": "missing-chd",
+      "note": "CPS3 exige CHD cap-jjm (n\u00e3o dispon\u00edvel)"
+    },
+    "kf10thep": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kf2k2mp2": {
+      "kind": "clone",
+      "requires": [
+        "kof2002.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "kf2k5uni": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kinst": {
+      "kind": "game",
+      "requires": [
+        "kinst.chd"
+      ],
+      "status": "ok",
+      "note": "CHD instalado em roms/kinst/"
+    },
+    "kinst2": {
+      "kind": "game",
+      "requires": [
+        "kinst2.chd"
+      ],
+      "status": "ok",
+      "note": "CHD instalado em roms/kinst2/"
+    },
+    "kizuna": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "knights": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof2000": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof2001": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof2002": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof2003": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof2k4se": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof94": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof95": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof96": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof97": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof98": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "kof99": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "lastbld2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "lbowling": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "magdrop3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "majtitl2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "martmast": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "matrim": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "megaman": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "megaman2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mk": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mk2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mk4": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "moomesa": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mp_sor2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "msh": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mshvsf": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mslug": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mslug2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mslug3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mslug3b6": {
+      "kind": "clone",
+      "requires": [
+        "mslug3.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "mslug4": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mslug5": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mslugx": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mvsc": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "mwalk": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "naomi": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "nbajam": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "neobombe": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "neogeo": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "ninjamas": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "nss": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "nwarru": {
+      "kind": "clone",
+      "requires": [
+        "nwarr.zip"
+      ],
+      "status": "missing-parent",
+      "note": "Clone de nwarr: set pai ausente no pacote"
+    },
+    "outrun": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "pacplus": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "pbobblen": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "pcktgal": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "pgm": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "prehisle": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "preisle2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "punisher": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "qbert": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "qsound": {
+      "kind": "bios",
+      "requires": [],
+      "status": "support",
+      "note": "BIOS/dispositivo \u2014 necess\u00e1rio para outros jogos"
+    },
+    "rampage": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "rbffspec": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "robocop2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "rotd": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "rtype": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "rtype2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "rtypeleo": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sailormn": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "samsh5sp": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "samsho": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "samsho2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "samsho3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "samsho4": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "savagere": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sdodgeb": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sengoku3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sf2ce": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sf2m7": {
+      "kind": "clone",
+      "requires": [
+        "sf2ce.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "sf2m8": {
+      "kind": "clone",
+      "requires": [
+        "sf2ce.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "sfa3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sfex2pa": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sfexpu1": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sfiii3": {
+      "kind": "game",
+      "requires": [
+        "cap-33s-2.chd"
+      ],
+      "status": "ok",
+      "note": "CHD instalado em roms/sfiii3/"
+    },
+    "sfz2ald": {
+      "kind": "clone",
+      "requires": [
+        "sfa2.zip"
+      ],
+      "status": "missing-parent",
+      "note": "Clone de sfa2: set pai ausente no pacote"
+    },
+    "sgemf": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "shdancer": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "shinobi": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "shinobi1": {
+      "kind": "clone",
+      "requires": [
+        "shinobi.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "shocktr2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "simpsons": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "snowbro2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "snowbros": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sonic2mb": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sonicwi2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "sonicwi3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "soulclbr": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "spang": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "spf2t": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "spidman": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "spinmast": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ssf2t": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ssideki3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ssideki4": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "ssriders": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "strhoop": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "suprmrio": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "svc": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "svcsplus": {
+      "kind": "clone",
+      "requires": [
+        "svc.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "tekken3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "tektagt": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "tetrisp": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "tmnt2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "tmnt22pu": {
+      "kind": "clone",
+      "requires": [
+        "tmnt2.zip"
+      ],
+      "status": "ok",
+      "note": ""
+    },
+    "toki": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "tumblep": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "twinspri": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "umk3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "vhunt2": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "vsavj": {
+      "kind": "clone",
+      "requires": [
+        "vsav.zip"
+      ],
+      "status": "missing-parent",
+      "note": "Clone de vsav: set pai ausente no pacote"
+    },
+    "wakuwak7": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "whp": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "wonder3": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "wwfmania": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "xmcota": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    },
+    "xmvsfur1": {
+      "kind": "clone",
+      "requires": [
+        "xmvsf.zip"
+      ],
+      "status": "missing-parent",
+      "note": "Clone de xmvsf: set pai ausente no pacote"
+    },
+    "zedblade": {
+      "kind": "game",
+      "requires": [],
+      "status": "ok",
+      "note": ""
+    }
+  }
+}

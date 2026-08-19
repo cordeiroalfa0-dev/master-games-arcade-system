@@ -1,0 +1,24 @@
+MASTER GAMES ARCADE — GERAR O .EXE NO SEU WINDOWS
+=================================================
+Dev Emerson 2026
+
+No seu PC Windows, dentro da pasta do projeto, rode:
+
+  npm install
+  npm run build
+  npx electron-builder --win nsis
+
+O instalador sai em:  release\Master Games Arcade Setup 1.0.0.exe
+
+O que ja esta configurado (nao precisa mexer):
+- build\icon.ico, installerHeader.bmp, installerSidebar.bmp  (feitos da sua imagem de fundo)
+- build\installer.nsh  -> Regra 7: verifica MAME -> baixa mamep64.exe (Google Drive, 142 MB)
+                          -> baixa as 180 ROMs do seu Drive para [InstalDir]\MAME\roms
+                          -> gera mame.ini apontando para essa pasta
+- build\mame-support   -> artwork, hash, ctrlr, hlsl, samples copiados na instalacao
+- dist\intro.html      -> intro carrega antes do launcher (Regra 1)
+- Electron abre em tela cheia adaptavel (Regra 10)
+- Nenhum arquivo .bat (Regra 17)
+
+Se o electron-builder reclamar de dependencia nativa, use:
+  npm install --legacy-peer-deps

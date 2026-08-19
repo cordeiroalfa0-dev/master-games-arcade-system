@@ -1,0 +1,14 @@
+See RULES.md — Master Games Arcade Golden Rules (16 regras fixas e inegociáveis).
+Resumo crítico:
+1. Sempre ter intro antes do launcher.
+2. Imagens das mulheres no fundo.
+3. Baixar apenas o mamep64.exe do Emerson diretamente do Google Drive.
+4. ROMs do Drive 1E2wJxUnCMkzlEwJ13-WS_G4Su-qA6H2A → [InstallDir]/MAME/roms/, com mame.ini apontando para lá.
+5. Janela de instalação personalizada com recortes das imagens + "Dev Emerson 2026".
+6. NUNCA recriar do zero. Sempre corrigir sobre o existente.
+7. Instalador: verifica MAME → baixa MAME (se faltar) → baixa as 180 ROMs.
+8. Electron + Windows + NSIS (electron-builder).
+9. Nome: Master Games Arcade.
+10. Tela cheia adaptável à resolução.
+11-15. Correções cirúrgicas, preservando o restante, validando regras 1-10.
+16. Distribuir o instalador via CDN da Lovable; MAME e ROMs vêm diretamente do Google Drive.

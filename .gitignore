@@ -1,0 +1,37 @@
+# Dependências e caches
+node_modules/
+.pnpm-store/
+
+# Releases e executáveis gerados
+release/
+electron-release/
+dist-installer/
+*.exe
+*.blockmap
+
+# ROMs e dados locais
+roms/
+**/roms/
+user-data/
+config.local.json
+launches.log
+
+# Segredos e logs
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# O bundle do launcher e as artes do instalador fazem parte do código entregue.
+!dist/
+!dist/**
+!build/
+!build/**
