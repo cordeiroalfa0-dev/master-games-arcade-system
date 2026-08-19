@@ -23,7 +23,7 @@ O painel permite escolher presets Universal/Auto, DragonRise/Generic USB 0079:00
 
 ## Binário MAME
 
-O executável `emulators/mame168/mamep64.exe` não é versionado neste repositório porque ultrapassa o limite recomendado do GitHub. O projeto preserva o `mame.ini`, os perfis e a estrutura esperada. Coloque o binário MAMEPlus 0.168.2 nesse caminho antes de empacotar o instalador.
+O executável `emulators/mame168/mamep64.exe` é distribuído no **ZIP completo e no Release do GitHub**, junto com o `mame.ini`, os perfis de controle e a estrutura `ctrlr/cfg`. Ele não é mantido como arquivo individual no histórico Git por causa do tamanho; o ZIP completo contém o MAMEPlus 0.168.2 validado para o instalador.
 
 ## Instalação de dependências e desenvolvimento
 
@@ -32,7 +32,7 @@ pnpm install
 node mame-server.js
 ```
 
-Para gerar um instalador Windows, instale as dependências de build do projeto e use a configuração de empacotamento presente em `package.json`. O build final deve incluir o MAME em `emulators/mame168/mamep64.exe` e os arquivos de ROMs no ambiente de empacotamento, não no histórico do Git.
+Para gerar um instalador Windows, instale as dependências de build do projeto e use a configuração de empacotamento presente em `package.json`. O ZIP completo e o instalador incluem o MAMEPlus 0.168.2 em `emulators/mame168/mamep64.exe`; ROMs e BIOS continuam fora da distribuição pública e devem ser escolhidas pelo usuário na pasta de ROMs.
 
 ## Escopo
 
