@@ -8,6 +8,7 @@
   },
   "type": "module",
   "main": "electron/main.cjs",
+  "repository": "https://github.com/cordeiroalfa0-dev/master-games-arcade-system",
   "build": {
     "appId": "com.emerson.mastergamesarcade",
     "productName": "Master Games Arcade",
@@ -19,6 +20,7 @@
       "build/**/*",
       "emulators/**/*",
       "diagnostico-controle-arcade.bat",
+      "controls-profile.json",
       "mame-server.js",
       "package.json",
       "roms-manifest.json",
@@ -30,6 +32,7 @@
         "to": "build"
       }
     ],
+    "publish": [],
     "directories": {
       "output": "release",
       "buildResources": "build"

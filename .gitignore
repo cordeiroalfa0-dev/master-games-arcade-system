@@ -8,6 +8,8 @@ electron-release/
 dist-installer/
 *.exe
 *.blockmap
+*.tsbuildinfo
+validate-cache.json
 
 # ROMs e dados locais
 roms/
