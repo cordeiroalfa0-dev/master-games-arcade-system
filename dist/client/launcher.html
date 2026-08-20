@@ -211,6 +211,47 @@
     .resizer{display:none}
     .side{max-height:55vh}
   }
+  /* ===== CONTROLS STUDIO ===== */
+  #controlsModal{background:radial-gradient(circle at 50% 10%,rgba(0,229,255,.12),rgba(0,0,0,.9) 58%),rgba(0,0,0,.88);backdrop-filter:blur(8px)}
+  #controlsModal .controls-box{max-width:1080px;width:min(1080px,96vw);max-height:90vh;padding:0;overflow:hidden;border:1px solid rgba(0,229,255,.6);background:linear-gradient(145deg,rgba(8,17,36,.98),rgba(5,8,21,.98));box-shadow:0 0 60px rgba(0,229,255,.24),0 0 120px rgba(255,43,214,.12)}
+  .controls-head{padding:22px 24px 18px;border-bottom:1px solid rgba(0,229,255,.2);background:linear-gradient(100deg,rgba(0,229,255,.1),rgba(255,43,214,.06) 58%,transparent)}
+  .controls-kicker{color:var(--gold);font:8px/1.4 'Press Start 2P',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+  .controls-head h3{margin:0 0 8px;font-size:15px;text-shadow:0 0 14px rgba(0,229,255,.45)}
+  .controls-subtitle{max-width:790px;margin:0;color:#a9d8eb;font-size:12px;line-height:1.65}
+  .controls-body{padding:16px 20px 18px;overflow:auto}
+  .controls-statusbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:12px}
+  .controls-profile-card,.controls-device-card{border:1px solid rgba(0,229,255,.25);background:rgba(0,0,0,.25);border-radius:10px;padding:11px 12px}
+  .controls-field{display:flex;align-items:center;gap:10px;min-width:0}
+  .controls-label{color:var(--gold);font:8px/1.2 'Press Start 2P',monospace;letter-spacing:1px;white-space:nowrap}
+  .controls-profile-card select{min-width:0;flex:1;background:rgba(2,10,24,.92);color:#eaf9ff;border-color:rgba(0,229,255,.38);font-size:10px;padding:9px 11px}
+  .controls-device-card{display:flex;align-items:center;gap:10px;white-space:nowrap}
+  .controls-toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:12px}
+  .controls-toolgroup{display:flex;flex-wrap:wrap;gap:6px;padding:9px;border:1px solid rgba(0,229,255,.15);border-radius:10px;background:rgba(0,0,0,.18)}
+  .controls-toolgroup .group-title{width:100%;color:#7ccfe7;font:7px/1.3 'Press Start 2P',monospace;letter-spacing:1px;margin-bottom:2px}
+  .controls-toolgroup .btn{flex:1;min-width:128px;padding:8px 9px;font-size:8px;letter-spacing:1px}
+  .controls-toolgroup .btn.pink{background:linear-gradient(135deg,rgba(109,20,91,.75),rgba(35,12,49,.9))}
+  .controls-device-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+  .controls-device-grid .controls-field{padding:10px 11px;border:1px solid rgba(0,229,255,.18);border-radius:10px;background:rgba(0,0,0,.2)}
+  .controls-device-grid select{min-width:0;flex:1;background:rgba(2,10,24,.9);color:#eaf9ff;border-color:rgba(0,229,255,.3);font-size:10px;padding:8px}
+  .controls-monitor{display:grid;grid-template-columns:1.1fr 1fr;gap:9px;margin-bottom:10px}
+  .controls-monitor-card{min-height:54px;padding:10px 12px;border:1px solid rgba(0,229,255,.18);border-radius:10px;background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(0,0,0,.28))}
+  .controls-monitor-label{display:block;color:#6bbbd5;font:7px/1.2 'Press Start 2P',monospace;letter-spacing:1px;margin-bottom:7px}
+  #controlDeviceInfo{font-size:11px!important;color:#b8e8f7!important;min-height:18px}
+  #controlVisual{min-height:27px!important;gap:6px!important}
+  #controlVisual span{background:rgba(0,229,255,.05);box-shadow:inset 0 0 10px rgba(0,229,255,.05);font-family:'Press Start 2P',monospace;font-size:8px!important}
+  #controlDiagnostics{min-height:20px!important;margin:0!important;color:#ffe083!important;font-size:10px!important}
+  .controls-bindings-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 7px;color:var(--neon);font:9px/1.3 'Press Start 2P',monospace;letter-spacing:1px}
+  .controls-bindings-head span:last-child{color:#76bdd2;font:9px/1.3 'Segoe UI',system-ui,sans-serif;letter-spacing:0}
+  #controlRows{max-height:330px!important;padding:2px;border:1px solid rgba(0,229,255,.18);border-radius:10px;background:rgba(0,0,0,.2);overflow:auto!important}
+  #controlRows > div{border-color:rgba(0,229,255,.17)!important;background:linear-gradient(135deg,rgba(11,32,55,.8),rgba(5,12,28,.84));transition:.16s;min-height:58px}
+  #controlRows > div:hover{border-color:rgba(0,229,255,.65)!important;box-shadow:0 0 14px rgba(0,229,255,.16);transform:translateY(-1px)}
+  #controlRows b{font-size:9px!important;letter-spacing:.5px}
+  #controlRows button{border-radius:5px;padding:6px 8px;font-size:8px;letter-spacing:1px}
+  .controls-capture-hint{min-height:27px;margin-top:9px;padding:8px 10px;border-left:3px solid var(--neon);border-radius:5px;background:rgba(0,229,255,.07);color:#7eeeff!important;font-size:11px!important}
+  .controls-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(0,229,255,.18)}
+  .controls-footer-note{color:#6eaec1;font-size:10px;line-height:1.4}
+  .controls-footer .actions{margin:0}
+  @media (max-width:800px){#controlsModal .controls-box{width:98vw;max-height:94vh}.controls-statusbar,.controls-toolbar,.controls-monitor{grid-template-columns:1fr}.controls-device-grid{grid-template-columns:1fr}.controls-body{padding:13px}.controls-head{padding:18px 16px 15px}.controls-toolgroup .btn{min-width:112px}}
 </style>
 </head>
 <body>
@@ -361,38 +402,42 @@
 </div>
 
 <div class="modal" id="controlsModal">
-  <div class="box" style="max-width:920px">
-    <h3>🎮 CONFIGURAÇÃO DOS CONTROLES</h3>
-    <p style="color:#9fdcff;font-size:12px;line-height:1.5">Escolha um perfil pronto ou clique em <b>CAPTURAR</b> e pressione o botão físico. O mapa salvo é gravado no MAMEPlus e vale para todos os jogos.</p>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 12px">
-      <label style="color:#ffd54f;font-family:'Press Start 2P',monospace;font-size:9px">PERFIL</label>
-      <select id="controlPreset" class="btn" style="flex:1;min-width:260px"><option value="arcade-usb">Universal / Auto</option><option value="dragonrise">DragonRise / Generic USB 0079:0006</option><option value="directinput">Arcade / DirectInput</option><option value="playstation">PlayStation / XInput</option><option value="manual">Configuração manual</option></select>
-      <span id="controlPadInfo" class="badge bad">Conecte o controle</span>
+  <div class="box controls-box">
+    <div class="controls-head">
+      <div class="controls-kicker">MASTER GAMES ARCADE · INPUT STUDIO</div>
+      <h3>🎮 CONFIGURAÇÃO DOS CONTROLES</h3>
+      <p class="controls-subtitle">Monte o painel sem adivinhar tokens: escolha um perfil, detecte o dispositivo e capture cada ação. O mapa lógico é salvo automaticamente e aplicado ao MAMEPlus para todos os jogos.</p>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px">
-      <button class="btn" id="controlsTest">▣ TESTAR ENTRADAS</button><button class="btn" id="controlsGuide">▶ CAPTURA GUIADA</button>
-      <button class="btn" id="controlsBackup">⇩ EXPORTAR PERFIL</button>
-      <button class="btn" id="controlsRestore">⇧ IMPORTAR PERFIL</button>
-      <button class="btn" id="controlsReset">↺ RESTAURAR PADRÃO</button>
-      <select id="controlsPlayer" class="btn" style="min-width:100px"><option value="1">P1</option><option value="2">P2</option></select>
-      <button class="btn" id="controlsDetect">⟳ DETECTAR CONTROLES</button><button class="btn" id="controlsHid">⌁ DIAGNÓSTICO HID</button>
+    <div class="controls-body">
+      <div class="controls-statusbar">
+        <div class="controls-profile-card controls-field">
+          <label class="controls-label" for="controlPreset">PERFIL</label>
+          <select id="controlPreset" class="btn"><option value="arcade-usb">Universal / Auto</option><option value="dragonrise">DragonRise / Generic USB 0079:0006</option><option value="directinput">Arcade / DirectInput</option><option value="playstation">PlayStation / XInput</option><option value="manual">Configuração manual</option></select>
+        </div>
+        <div class="controls-device-card"><span class="controls-label">STATUS</span><span id="controlPadInfo" class="badge bad">Conecte o controle</span></div>
+      </div>
+      <div class="controls-toolbar">
+        <div class="controls-toolgroup"><span class="group-title">CAPTURA E TESTE</span><button class="btn" id="controlsTest">▣ TESTAR ENTRADAS</button><button class="btn pink" id="controlsGuide">▶ CAPTURA GUIADA</button></div>
+        <div class="controls-toolgroup"><span class="group-title">PERFIL</span><button class="btn" id="controlsBackup">⇩ EXPORTAR PERFIL</button><button class="btn" id="controlsRestore">⇧ IMPORTAR PERFIL</button><button class="btn" id="controlsReset">↺ RESTAURAR PADRÃO</button></div>
+        <div class="controls-toolgroup"><span class="group-title">DIAGNÓSTICO</span><select id="controlsPlayer" class="btn" aria-label="Jogador"><option value="1">P1</option><option value="2">P2</option></select><button class="btn" id="controlsDetect">⟳ DETECTAR CONTROLES</button><button class="btn" id="controlsHid">⌁ DIAGNÓSTICO HID</button></div>
+      </div>
       <input id="controlsRestoreFile" type="file" accept="application/json,.json" style="display:none">
+      <div class="controls-device-grid">
+        <div class="controls-field"><label class="controls-label" for="padDeviceP1">CONTROLE P1</label><select id="padDeviceP1" class="btn"><option value="">— nenhum —</option></select></div>
+        <div class="controls-field"><label class="controls-label" for="padDeviceP2">CONTROLE P2</label><select id="padDeviceP2" class="btn"><option value="">— nenhum —</option></select></div>
+      </div>
+      <div class="controls-monitor">
+        <div class="controls-monitor-card"><span class="controls-monitor-label">DISPOSITIVO ATIVO</span><div id="controlDeviceInfo">Dispositivo: aguardando controle…</div></div>
+        <div class="controls-monitor-card"><span class="controls-monitor-label">ENTRADAS EM TEMPO REAL</span><div id="controlVisual"></div></div>
+      </div>
+      <div id="controlDiagnostics" class="controls-monitor-card">Conflitos: verificando…</div>
+      <div class="controls-bindings-head"><span>MAPA DE AÇÕES</span><span>CAPTURE UM BOTÃO PARA SUBSTITUIR O TOKEN</span></div>
+      <div id="controlRows"></div>
+      <div id="controlCaptureHint" class="controls-capture-hint"></div>
+      <div class="controls-footer"><div class="controls-footer-note">Autosave ativo · backups CFG antes de substituir · Menu/Select/Cancel permanecem no teclado</div><div class="actions"><button class="btn" id="controlsSave">✓ SALVAR NO MAME</button><button class="btn pink" id="controlsClose">FECHAR</button></div></div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 6px">
-      <label style="color:#ffd54f;font-family:'Press Start 2P',monospace;font-size:8px">CONTROLE P1</label>
-      <select id="padDeviceP1" class="btn" style="flex:1;min-width:220px"><option value="">— nenhum —</option></select>
-      <label style="color:#ffd54f;font-family:'Press Start 2P',monospace;font-size:8px">CONTROLE P2</label>
-      <select id="padDeviceP2" class="btn" style="flex:1;min-width:220px"><option value="">— nenhum —</option></select>
-    </div>
-    <div id="controlDeviceInfo" style="font-size:11px;color:#9fdcff;min-height:18px">Dispositivo: aguardando controle…</div>
-    <div id="controlVisual" style="display:flex;gap:5px;flex-wrap:wrap;min-height:24px;margin:3px 0;color:#9fdcff;font-size:10px"></div>
-    <div id="controlDiagnostics" style="min-height:20px;color:#ffd54f;font-size:11px;margin:3px 0">Conflitos: verificando…</div>
-    <div id="controlRows" style="max-height:390px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:7px"></div>
-    <div id="controlCaptureHint" style="min-height:20px;color:#00e5ff;font-size:12px;margin-top:8px"></div>
-    <div class="actions"><button class="btn" id="controlsSave">✓ SALVAR NO MAME</button><button class="btn pink" id="controlsClose">FECHAR</button></div>
   </div>
 </div>
-
 <div class="modal" id="dlModal">
   <div class="box">
     <h3>⬇ BAIXAR ROMs (Google Drive)</h3>
