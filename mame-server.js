@@ -902,6 +902,18 @@ function defaultControlProfile(kind = "arcade-usb") {
     }, updatedAt: Date.now(),
   };
 }
+function normalizeSingleDragonRiseProfile(profile) {
+  if (!profile || profile.kind !== "dragonrise") return profile;
+  const p = { ...profile, bindings: { ...(profile.bindings || {}) }, padMap: { ...(profile.padMap || {}) }, deviceMap: {}, joycodeMap: {} };
+  const p2Actions = ["START2", "COIN2", "P2_JOYSTICK_UP", "P2_JOYSTICK_DOWN", "P2_JOYSTICK_LEFT", "P2_JOYSTICK_RIGHT", ...Array.from({ length: 8 }, (_, i) => `P2_BUTTON${i + 1}`)];
+  for (const action of p2Actions) {
+    const value = String(p.bindings[action] || "");
+    p.bindings[action] = value.split(/\s+OR\s+JOYCODE_/i)[0].trim() || value;
+  }
+  delete p.padMap["2"];
+  p.logicalMap = logicalMapFromBindings(p.bindings);
+  return p;
+}
 function logicalMapFromBindings(bindings) {
   const b = bindings || {};
   return {
@@ -914,7 +926,7 @@ function readControlProfile() {
     const raw = JSON.parse(fs.readFileSync(CONTROL_PROFILE_FILE, "utf8"));
     const base = defaultControlProfile(raw.kind || "arcade-usb");
     const bindings = normalizeControlBindings(raw.bindings, base.bindings);
-    return { ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings, logicalMap: logicalMapFromBindings(bindings) };
+    return normalizeSingleDragonRiseProfile({ ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings, logicalMap: logicalMapFromBindings(bindings) });
   } catch { const base = defaultControlProfile("arcade-usb"); return { ...base, logicalMap: logicalMapFromBindings(base.bindings) }; }
 }
 function saveControlProfile(profile) {
@@ -922,8 +934,9 @@ function saveControlProfile(profile) {
   const bindings = normalizeControlBindings(profile.bindings, base.bindings);
   const clean = { ...base, ...profile, padMap: profile.padMap || {}, deviceMap: profile.deviceMap || {}, joycodeMap: profile.joycodeMap || {}, bindings, logicalMap: logicalMapFromBindings(bindings), updatedAt: Date.now() };
   for (const action of CONTROL_ACTIONS) clean.bindings[action] = String(clean.bindings[action] || base.bindings[action]);
-  fs.writeFileSync(CONTROL_PROFILE_FILE, JSON.stringify(clean, null, 2), "utf8");
-  return clean;
+  const normalized = normalizeSingleDragonRiseProfile(clean);
+  fs.writeFileSync(CONTROL_PROFILE_FILE, JSON.stringify(normalized, null, 2), "utf8");
+  return normalized;
 }
 function writeDefaultControls(mameDir, profile = readControlProfile()) {
   const cfgDir = path.join(mameDir, "cfg");
@@ -1655,7 +1668,7 @@ async function handleRequest(req, res) {
 
   // GET /api/controls/profile — perfil atual e presets disponíveis.
   if (req.method === "GET" && url.pathname === "/api/controls/profile") {
-    json(res, 200, { profile: readControlProfile(), presets: ["arcade-usb", "dragonrise", "directinput", "playstation"].map((kind) => { const p = defaultControlProfile(kind); return { ...p, logicalMap: logicalMapFromBindings(p.bindings) }; }) });
+    json(res, 200, { profile: readControlProfile(), presets: ["arcade-usb", "dragonrise", "directinput", "playstation"].map((kind) => { const p = normalizeSingleDragonRiseProfile(defaultControlProfile(kind)); return { ...p, logicalMap: logicalMapFromBindings(p.bindings) }; }) });
     return;
   }
 
