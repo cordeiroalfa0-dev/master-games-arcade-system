@@ -902,16 +902,25 @@ function defaultControlProfile(kind = "arcade-usb") {
     }, updatedAt: Date.now(),
   };
 }
+function logicalMapFromBindings(bindings) {
+  const b = bindings || {};
+  return {
+    P1: { up: b.P1_JOYSTICK_UP || "", down: b.P1_JOYSTICK_DOWN || "", left: b.P1_JOYSTICK_LEFT || "", right: b.P1_JOYSTICK_RIGHT || "", b1: b.P1_BUTTON1 || "", b2: b.P1_BUTTON2 || "", b3: b.P1_BUTTON3 || "", b4: b.P1_BUTTON4 || "", b5: b.P1_BUTTON5 || "", b6: b.P1_BUTTON6 || "", start: b.START1 || "", coin: b.COIN1 || "" },
+    P2: { up: b.P2_JOYSTICK_UP || "", down: b.P2_JOYSTICK_DOWN || "", left: b.P2_JOYSTICK_LEFT || "", right: b.P2_JOYSTICK_RIGHT || "", b1: b.P2_BUTTON1 || "", b2: b.P2_BUTTON2 || "", b3: b.P2_BUTTON3 || "", b4: b.P2_BUTTON4 || "", b5: b.P2_BUTTON5 || "", b6: b.P2_BUTTON6 || "", start: b.START2 || "", coin: b.COIN2 || "" }
+  };
+}
 function readControlProfile() {
   try {
     const raw = JSON.parse(fs.readFileSync(CONTROL_PROFILE_FILE, "utf8"));
     const base = defaultControlProfile(raw.kind || "arcade-usb");
-    return { ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings: normalizeControlBindings(raw.bindings, base.bindings) };
-  } catch { return defaultControlProfile("arcade-usb"); }
+    const bindings = normalizeControlBindings(raw.bindings, base.bindings);
+    return { ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings, logicalMap: logicalMapFromBindings(bindings) };
+  } catch { const base = defaultControlProfile("arcade-usb"); return { ...base, logicalMap: logicalMapFromBindings(base.bindings) }; }
 }
 function saveControlProfile(profile) {
   const base = defaultControlProfile(profile.kind || "arcade-usb");
-  const clean = { ...base, ...profile, padMap: profile.padMap || {}, deviceMap: profile.deviceMap || {}, joycodeMap: profile.joycodeMap || {}, bindings: normalizeControlBindings(profile.bindings, base.bindings), updatedAt: Date.now() };
+  const bindings = normalizeControlBindings(profile.bindings, base.bindings);
+  const clean = { ...base, ...profile, padMap: profile.padMap || {}, deviceMap: profile.deviceMap || {}, joycodeMap: profile.joycodeMap || {}, bindings, logicalMap: logicalMapFromBindings(bindings), updatedAt: Date.now() };
   for (const action of CONTROL_ACTIONS) clean.bindings[action] = String(clean.bindings[action] || base.bindings[action]);
   fs.writeFileSync(CONTROL_PROFILE_FILE, JSON.stringify(clean, null, 2), "utf8");
   return clean;
@@ -1646,7 +1655,7 @@ async function handleRequest(req, res) {
 
   // GET /api/controls/profile — perfil atual e presets disponíveis.
   if (req.method === "GET" && url.pathname === "/api/controls/profile") {
-    json(res, 200, { profile: readControlProfile(), presets: [defaultControlProfile("arcade-usb"), defaultControlProfile("dragonrise"), defaultControlProfile("directinput"), defaultControlProfile("playstation")] });
+    json(res, 200, { profile: readControlProfile(), presets: ["arcade-usb", "dragonrise", "directinput", "playstation"].map((kind) => { const p = defaultControlProfile(kind); return { ...p, logicalMap: logicalMapFromBindings(p.bindings) }; }) });
     return;
   }
 
