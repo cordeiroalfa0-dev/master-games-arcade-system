@@ -853,6 +853,28 @@ const CONTROL_ACTIONS = [
 ];
 const CONTROL_PROFILE_FILE = path.join(DATA_DIR, "controls-profile.json");
 function buttonToken(player, n) { return `JOYCODE_${player}_BUTTON${Math.max(1, Number(n) || 1)}`; }
+const UI_CONTROL_ACTIONS = new Set(["UI_MENU", "UI_CANCEL", "UI_SELECT", "UI_UP", "UI_DOWN", "UI_LEFT", "UI_RIGHT"]);
+function normalizeControlBindings(bindings, base) {
+  const out = { ...base, ...(bindings || {}) };
+  const seenJoy = new Set();
+  for (const action of CONTROL_ACTIONS) {
+    if (UI_CONTROL_ACTIONS.has(action)) {
+      out[action] = base[action] || String(out[action] || "");
+      continue;
+    }
+    const parts = String(out[action] || "").toUpperCase().split(/\s+OR\s+/).map((part) => part.trim()).filter(Boolean);
+    const kept = [];
+    for (const part of parts) {
+      const tokens = part.split(/\s+/).filter(Boolean);
+      const joyTokens = tokens.filter((token) => /^JOYCODE_\d+_/.test(token));
+      if (joyTokens.some((token) => seenJoy.has(token))) continue;
+      joyTokens.forEach((token) => seenJoy.add(token));
+      if (tokens.length) kept.push(tokens.join(" "));
+    }
+    out[action] = kept.join(" OR ") || base[action] || "";
+  }
+  return out;
+}
 function defaultControlProfile(kind = "arcade-usb") {
   const p1 = kind === "playstation" ? 1 : 1;
   const p2 = 2;
@@ -864,9 +886,9 @@ function defaultControlProfile(kind = "arcade-usb") {
     deviceMatch: kind === "dragonrise" ? { vendorId: "0079", productId: "0006", names: ["Generic USB Joystick", "DragonRise"] } : null,
     padMap: {}, deviceMap: {}, joycodeMap: {},
     bindings: {
-      UI_MENU: "KEYCODE_TAB OR " + b(1, 10), UI_CANCEL: "KEYCODE_ESC OR " + b(1, 7), UI_SELECT: "KEYCODE_ENTER OR " + b(1, 1),
-      UI_UP: "KEYCODE_UP OR JOYCODE_1_HAT1UP OR JOYCODE_1_YAXIS_UP_SWITCH", UI_DOWN: "KEYCODE_DOWN OR JOYCODE_1_HAT1DOWN OR JOYCODE_1_YAXIS_DOWN_SWITCH",
-      UI_LEFT: "KEYCODE_LEFT OR JOYCODE_1_HAT1LEFT OR JOYCODE_1_XAXIS_LEFT_SWITCH", UI_RIGHT: "KEYCODE_RIGHT OR JOYCODE_1_HAT1RIGHT OR JOYCODE_1_XAXIS_RIGHT_SWITCH",
+      UI_MENU: "KEYCODE_TAB", UI_CANCEL: "KEYCODE_ESC", UI_SELECT: "KEYCODE_ENTER",
+      UI_UP: "KEYCODE_UP", UI_DOWN: "KEYCODE_DOWN",
+      UI_LEFT: "KEYCODE_LEFT", UI_RIGHT: "KEYCODE_RIGHT",
       START1: "KEYCODE_1 OR JOYCODE_1_BUTTON9", COIN1: "KEYCODE_5 OR JOYCODE_1_BUTTON10",
       P1_JOYSTICK_UP: "KEYCODE_UP OR JOYCODE_1_YAXIS_UP_SWITCH OR JOYCODE_1_HAT1UP", P1_JOYSTICK_DOWN: "KEYCODE_DOWN OR JOYCODE_1_YAXIS_DOWN_SWITCH OR JOYCODE_1_HAT1DOWN",
       P1_JOYSTICK_LEFT: "KEYCODE_LEFT OR JOYCODE_1_XAXIS_LEFT_SWITCH OR JOYCODE_1_HAT1LEFT", P1_JOYSTICK_RIGHT: "KEYCODE_RIGHT OR JOYCODE_1_XAXIS_RIGHT_SWITCH OR JOYCODE_1_HAT1RIGHT",
@@ -884,12 +906,12 @@ function readControlProfile() {
   try {
     const raw = JSON.parse(fs.readFileSync(CONTROL_PROFILE_FILE, "utf8"));
     const base = defaultControlProfile(raw.kind || "arcade-usb");
-    return { ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings: { ...base.bindings, ...(raw.bindings || {}) } };
+    return { ...base, ...raw, padMap: raw.padMap || {}, deviceMap: raw.deviceMap || {}, joycodeMap: raw.joycodeMap || {}, bindings: normalizeControlBindings(raw.bindings, base.bindings) };
   } catch { return defaultControlProfile("arcade-usb"); }
 }
 function saveControlProfile(profile) {
   const base = defaultControlProfile(profile.kind || "arcade-usb");
-  const clean = { ...base, ...profile, padMap: profile.padMap || {}, deviceMap: profile.deviceMap || {}, joycodeMap: profile.joycodeMap || {}, bindings: { ...base.bindings, ...(profile.bindings || {}) }, updatedAt: Date.now() };
+  const clean = { ...base, ...profile, padMap: profile.padMap || {}, deviceMap: profile.deviceMap || {}, joycodeMap: profile.joycodeMap || {}, bindings: normalizeControlBindings(profile.bindings, base.bindings), updatedAt: Date.now() };
   for (const action of CONTROL_ACTIONS) clean.bindings[action] = String(clean.bindings[action] || base.bindings[action]);
   fs.writeFileSync(CONTROL_PROFILE_FILE, JSON.stringify(clean, null, 2), "utf8");
   return clean;
