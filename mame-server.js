@@ -37,6 +37,30 @@ async function listRawHidDevices() {
   }
 }
 
+async function runMameVerboseDiagnostic(mameExe) {
+  const target = path.resolve(String(mameExe || "").trim());
+  if (!target || !fs.existsSync(target)) return { ok: false, error: `MAME não encontrado: ${target || "caminho vazio"}`, devices: [], lines: [] };
+  return await new Promise((resolve) => {
+    const child = spawn(target, ["-verbose", "-listxml"], { cwd: path.dirname(target), windowsHide: true });
+    let output = "";
+    let settled = false;
+    const finish = (result) => { if (settled) return; settled = true; try { child.kill(); } catch {} resolve(result); };
+    const collect = (chunk) => { output += String(chunk || ""); if (output.length > 1_000_000) output = output.slice(-1_000_000); };
+    child.stdout?.on("data", collect);
+    child.stderr?.on("data", collect);
+    child.on("error", (error) => finish({ ok: false, error: error.message, devices: [], lines: [] }));
+    child.on("close", (code) => {
+      const lines = output.split(/\r?\n/).filter((line) => /Input:\s+(?:Adding|Device|Joystick|Gamepad)/i.test(line));
+      const devices = lines.filter((line) => /Input:\s+Adding/i.test(line)).map((line) => {
+        const m = line.match(/Input:\s+Adding\s+(.+?)(?:\s+\(device id:\s*(.+)\))?$/i);
+        return { name: m?.[1]?.trim() || line.trim(), id: m?.[2]?.trim() || "", raw: line.trim() };
+      });
+      finish({ ok: true, code: code ?? 0, devices, lines, truncated: output.length >= 1_000_000 });
+    });
+    setTimeout(() => finish({ ok: false, error: "Tempo limite ao executar o diagnóstico MAME", devices: [], lines: [], timeout: true }), 15_000);
+  });
+}
+
 const PORT = Number(process.env.MGA_PORT || process.env.PORT || 7777);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.MGA_USER_DATA || __dirname;
@@ -965,6 +989,12 @@ function saveControlProfile(profile) {
   fs.writeFileSync(CONTROL_PROFILE_FILE, JSON.stringify(normalized, null, 2), "utf8");
   return normalized;
 }
+function backupConfigFile(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  const backupPath = `${filePath}.mga-backup`;
+  try { if (!fs.existsSync(backupPath)) fs.copyFileSync(filePath, backupPath); return backupPath; } catch { return null; }
+}
+
 function writeDefaultControls(mameDir, profile = readControlProfile()) {
   const cfgDir = path.join(mameDir, "cfg");
   if (!fs.existsSync(cfgDir)) fs.mkdirSync(cfgDir, { recursive: true });
@@ -972,11 +1002,16 @@ function writeDefaultControls(mameDir, profile = readControlProfile()) {
   const xmlEscape = (value) => String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const mapEntries = [];
   const seenDevices = new Set();
+  const seenControllers = new Set();
+  const mapCandidates = Object.values(profile.deviceMap || {});
   for (const value of Object.values(profile.deviceMap || {})) {
     const id = typeof value === "string" ? value : value?.mameId || value?.id || "";
     const controller = typeof value === "object" ? value?.controller || "" : "";
-    if (!id || !/^JOYCODE_\d+$/.test(controller) || seenDevices.has(id)) continue;
+    const genericVidPid = /^(?:HID#)?VID_[0-9A-F]+&PID_[0-9A-F]+$/i.test(id);
+    const hasStableIdentity = /^XInput Player \d+$/i.test(id) || /[#]|instance_|product_/i.test(id);
+    if (!id || !/^JOYCODE_\d+$/.test(controller) || genericVidPid || !hasStableIdentity || seenDevices.has(id) || seenControllers.has(controller)) continue;
     seenDevices.add(id);
+    seenControllers.add(controller);
     mapEntries.push(`            <mapdevice device="${xmlEscape(id)}" controller="${controller}" />`);
   }
   const ports = map.map(([t, k]) => `            <port type="${t}"><newseq type="standard">${xmlEscape(k)}</newseq></port>`).join("\n");
@@ -990,6 +1025,9 @@ ${mapEntries.join("\n")}${mapEntries.length ? "\n" : ""}${ports}
 </mameconfig>
 `;
   const defaultCfgPath = path.join(cfgDir, "default.cfg");
+  const backups = [];
+  const defaultBackup = backupConfigFile(defaultCfgPath);
+  if (defaultBackup) backups.push(defaultBackup);
   fs.writeFileSync(defaultCfgPath, xml, "utf8");
 
   // Perfil portátil para o MAMEPlus. O launcher passa -ctrlr explicitamente,
@@ -998,13 +1036,15 @@ ${mapEntries.join("\n")}${mapEntries.length ? "\n" : ""}${ports}
   const ctrlrDir = path.join(mameDir, "ctrlr");
   if (!fs.existsSync(ctrlrDir)) fs.mkdirSync(ctrlrDir, { recursive: true });
   const ctrlrPath = path.join(ctrlrDir, "master-games-arcade.cfg");
+  const ctrlrBackup = backupConfigFile(ctrlrPath);
+  if (ctrlrBackup) backups.push(ctrlrBackup);
   fs.writeFileSync(ctrlrPath, xml, "utf8");
   try {
     writeJoystickIni(mameDir);
     writeMameIniKey(mameDir, "ctrlrpath", ctrlrDir);
     writeMameIniKey(mameDir, "ctrlr", "master-games-arcade");
   } catch {}
-  return { cfgDir, defaultCfgPath, ctrlrDir, ctrlrPath, profile: "master-games-arcade", mappings: map.length };
+  return { cfgDir, defaultCfgPath, ctrlrDir, ctrlrPath, profile: "master-games-arcade", mappings: map.length, mapdeviceWritten: mapEntries.length, mapdeviceSkipped: mapCandidates.length - mapEntries.length, backups };
 }
 
 // Liga o suporte a controles USB no mame.ini (DirectInput + XInput via winhybrid).
@@ -1700,6 +1740,13 @@ async function handleRequest(req, res) {
     else json(res, 200, result);
     return;
   }
+  // GET /api/controls/mame-diagnostic — IDs e linhas de entrada do próprio MAME.
+  if (req.method === "GET" && url.pathname === "/api/controls/mame-diagnostic") {
+    const mamePath = url.searchParams.get("path") || findMameExe(readConfig());
+    const result = await runMameVerboseDiagnostic(mamePath);
+    json(res, result.ok ? 200 : 422, { ...result, mamePath: mamePath || "", guidance: "Use os IDs exatamente como exibidos pelo MAME; VID/PID genérico ou IDs duplicados não são considerados estáveis." });
+    return;
+  }
   // GET /api/controls/profile — perfil atual e presets disponíveis.
   if (req.method === "GET" && url.pathname === "/api/controls/profile") {
     json(res, 200, { profile: readControlProfile(), presets: ["arcade-usb", "dragonrise", "directinput", "playstation"].map((kind) => { const p = normalizeSingleDragonRiseProfile(defaultControlProfile(kind)); return { ...p, logicalMap: logicalMapFromBindings(p.bindings) }; }) });
@@ -1717,9 +1764,9 @@ async function handleRequest(req, res) {
       const saved = saveControlProfile(profile);
       if (mameExe) {
         const controls = writeDefaultControls(path.dirname(mameExe), saved);
-        json(res, 200, { ok: true, profile: saved, applied: true, cfgDir: controls.cfgDir, mappings: controls.mappings });
+        json(res, 200, { ok: true, profile: saved, applied: true, cfgDir: controls.cfgDir, mappings: controls.mappings, mapdeviceWritten: controls.mapdeviceWritten, mapdeviceSkipped: controls.mapdeviceSkipped, backups: controls.backups || [] });
       } else {
-        json(res, 200, { ok: true, profile: saved, applied: false, message: "Perfil salvo; será aplicado quando o MAME for localizado." });
+        json(res, 200, { ok: true, profile: saved, applied: false, persisted: true, message: "Perfil salvo; será aplicado quando o MAME for localizado." });
       }
     } catch (err) { json(res, 500, { error: `Falha ao salvar perfil: ${err.message}` }); }
     return;
@@ -1738,16 +1785,20 @@ async function handleRequest(req, res) {
     const cfgDir = path.join(mameDir, "cfg");
     try {
       const controls = writeDefaultControls(mameDir, readControlProfile());
-      // Apaga cfgs por-rom para garantir que o default valha em todas
+      const backupPaths = [];
+      // Antes de limpar CFGs específicos, preserva uma cópia de recuperação.
       try {
         for (const f of fs.readdirSync(cfgDir)) {
           if (f.toLowerCase() !== "default.cfg" && /\.cfg$/i.test(f)) {
-            try { fs.unlinkSync(path.join(cfgDir, f)); } catch {}
+            const filePath = path.join(cfgDir, f);
+            const backup = backupConfigFile(filePath);
+            if (backup) backupPaths.push(backup);
+            try { fs.unlinkSync(filePath); } catch {}
           }
         }
       } catch {}
       console.log(`[MAME] Teclado padrão aplicado em ${cfgDir}`);
-      json(res, 200, { ok: true, cfgDir: controls.cfgDir, mappings: controls.mappings });
+      json(res, 200, { ok: true, cfgDir: controls.cfgDir, mappings: controls.mappings, mapdeviceWritten: controls.mapdeviceWritten, mapdeviceSkipped: controls.mapdeviceSkipped, backups: [...(controls.backups || []), ...backupPaths] });
     } catch (err) {
       json(res, 500, { error: `Falha ao escrever default.cfg: ${err.message}` });
     }

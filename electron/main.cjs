@@ -84,6 +84,16 @@ function createWindow() {
     return { action: "deny" };
   });
 
+  // Persiste o perfil de controles antes de aceitar o fechamento da janela.
+  mainWindow.on("close", (event) => {
+    if (mainWindow.__mgaPersistingControls) return;
+    event.preventDefault();
+    mainWindow.__mgaPersistingControls = true;
+    mainWindow.webContents.executeJavaScript("window.__mgaPersistControls && window.__mgaPersistControls()")
+      .catch(() => {})
+      .finally(() => { try { mainWindow.close(); } catch {} });
+  });
+
   // Carrega a INTRO primeiro; ela redireciona para o launcher
   mainWindow.loadURL("http://127.0.0.1:7777/intro.html");
 }

@@ -1,6 +1,6 @@
 {
   "name": "master-games-arcade",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Master Games Arcade — Frontend retrô para sua coleção de jogos arcade. Funciona 100% offline, organiza ROMs, baixa artes automaticamente e roda em tela cheia com visual neon CRT.",
   "author": {
     "name": "Emerson",
@@ -34,7 +34,7 @@
     ],
     "publish": [],
     "directories": {
-      "output": "release",
+      "output": "release-persistence-1.1.1",
       "buildResources": "build"
     },
     "win": {
