@@ -10,6 +10,33 @@ import path from "path";
 import { fileURLToPath } from "url";
 import https from "https";
 
+// Diagnóstico HID opcional. O caminho principal de gameplay continua sendo
+// Gamepad/DirectInput; node-hid só é consultado quando o painel pede detalhes
+// brutos do dispositivo, evitando eventos duplicados no MAME.
+let hidModulePromise;
+async function listRawHidDevices() {
+  try {
+    hidModulePromise ||= import("node-hid");
+    const hid = await hidModulePromise;
+    const devices = typeof hid.devices === "function" ? hid.devices() : [];
+    return devices.map((device) => ({
+      vendorId: device.vendorId ?? null,
+      productId: device.productId ?? null,
+      vendorIdHex: Number.isInteger(device.vendorId) ? `0x${device.vendorId.toString(16).padStart(4, "0")}` : null,
+      productIdHex: Number.isInteger(device.productId) ? `0x${device.productId.toString(16).padStart(4, "0")}` : null,
+      product: device.product ?? "",
+      manufacturer: device.manufacturer ?? "",
+      serialNumber: device.serialNumber ?? "",
+      path: device.path ?? "",
+      usagePage: device.usagePage ?? null,
+      usage: device.usage ?? null,
+      interface: device.interface ?? null,
+    }));
+  } catch (error) {
+    return { available: false, reason: error?.message || "node-hid indisponível", devices: [] };
+  }
+}
+
 const PORT = Number(process.env.MGA_PORT || process.env.PORT || 7777);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.MGA_USER_DATA || __dirname;
@@ -1666,6 +1693,13 @@ async function handleRequest(req, res) {
     return;
   }
 
+  // GET /api/controls/hid — diagnóstico bruto opcional, sem capturar eventos.
+  if (req.method === "GET" && url.pathname === "/api/controls/hid") {
+    const result = await listRawHidDevices();
+    if (Array.isArray(result)) json(res, 200, { available: true, devices: result });
+    else json(res, 200, result);
+    return;
+  }
   // GET /api/controls/profile — perfil atual e presets disponíveis.
   if (req.method === "GET" && url.pathname === "/api/controls/profile") {
     json(res, 200, { profile: readControlProfile(), presets: ["arcade-usb", "dragonrise", "directinput", "playstation"].map((kind) => { const p = normalizeSingleDragonRiseProfile(defaultControlProfile(kind)); return { ...p, logicalMap: logicalMapFromBindings(p.bindings) }; }) });

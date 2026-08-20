@@ -9,7 +9,7 @@ Este repositório contém exclusivamente o código-fonte do **Master Games Arcad
 | `electron/main.cjs` | Processo principal do Electron |
 | `electron/preload.cjs` | Ponte segura entre Electron e launcher |
 | `dist/launcher.html` | Interface do launcher e painel de controles |
-| `mame-server.js` | Servidor local, configuração do MAME e rotas de controles |
+| `mame-server.js` | Servidor local, configuração do MAME, rotas de controles e diagnóstico HID opcional |
 | `controls-profile.json` | Perfil editável do controle arcade DragonRise/Generic USB |
 | `emulators/mame168/ctrlr/master-games-arcade.cfg` | Perfil de controles aplicado ao MAME |
 | `emulators/mame168/cfg/default.cfg` | Configuração padrão do MAME |
@@ -20,6 +20,10 @@ Este repositório contém exclusivamente o código-fonte do **Master Games Arcad
 ## Controles
 
 O painel permite escolher presets Universal/Auto, DragonRise/Generic USB 0079:0006, DirectInput, PlayStation/XInput e Manual. Também oferece captura individual, **captura guiada no estilo WinKawaks**, teste visual de botões e eixos, identificação do dispositivo, perfis P1/P2, exportação/importação, restauração do padrão e alerta de conflitos. A captura guiada percorre direções, seis botões, Start e Coin em sequência e remove o token capturado de qualquer ação anterior antes de salvá-lo. Para o cenário principal de um único encoder DragonRise, o dispositivo fica no P1, o seletor P2 mostra “não usado”, não são gerados `mapdevice` nem `JOYCODE_2_*` físicos e os comandos P2 permanecem apenas no teclado. A troca de preset apenas atualiza o painel; não reinicia o launcher nem o MAME. O mapa lógico P1/P2 é convertido para a gramática XML do MAME somente ao salvar. O mapa inicial do controle da foto separa soco/chute fraco, médio e forte, auxiliares, Start e Crédito; todos os campos permanecem editáveis.
+
+## Diagnóstico HID
+
+O launcher inclui `node-hid` como diagnóstico opcional. A rota local `/api/controls/hid` lista VID/PID, caminho HID, fabricante, produto, uso e interface quando o Windows expõe esses dados. Essa camada não captura eventos de gameplay e não disputa o controle com Gamepad/DirectInput; ela serve para confirmar o encoder e investigar outros controles sem alterar a compatibilidade do MAME.
 
 ## Binário MAME
 
