@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Master Games Arcade · MAME Launcher</title>
+<style>
+  :root{
+    --neon:#00e5ff; --neon2:#ff2bd6; --gold:#ffd54f;
+    --panel:rgba(6,10,22,.78); --border:rgba(0,229,255,.45);
+    --rowBg:rgba(8,14,30,.55); --rowHover:rgba(0,229,255,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:#cfefff;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+  /* full window background = arcade art */
+  body{position:relative;background:#000;}
+  .bg-slide{position:fixed;inset:0;background-position:center center;background-size:cover;background-repeat:no-repeat;background-attachment:fixed;z-index:0;opacity:0;transition:opacity 2.4s ease-in-out;pointer-events:none}
+  .bg-slide.current{opacity:1}
+  .bg-slide.old{background-image:url("/assets/background.png")}
+  .bg-slide.new{background-image:url("/assets/background_back.png")}
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.85) 100%),
+               linear-gradient(to bottom, rgba(0,0,0,.15), rgba(0,0,0,.45));
+  }
+  .window-controls{position:fixed;top:8px;right:10px;z-index:100;display:flex;gap:8px;-webkit-app-region:no-drag}
+  .win-btn{width:29px;height:18px;border:1px solid rgba(117,199,229,.52);border-radius:5px;background:rgba(2,8,18,.78);color:#c9f6ff;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 0 10px rgba(0,229,255,.16);transition:.12s}
+  .win-btn svg{width:11px;height:11px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .win-btn:hover{border-color:var(--neon);color:#fff;background:rgba(0,229,255,.18);box-shadow:0 0 14px rgba(0,229,255,.38)}
+  .win-btn.close:hover{border-color:#ff4f8b;background:rgba(255,47,101,.2);box-shadow:0 0 14px rgba(255,47,101,.42)}
+  .app{position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr auto;height:100vh;padding:34px 12px 10px;gap:8px}
+
+  /* ===== TOP BAR ===== */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 14px; background:var(--panel);
+    border:1px solid var(--border); border-radius:10px;
+    box-shadow:0 0 18px rgba(0,229,255,.25), inset 0 0 12px rgba(0,229,255,.08);
+    -webkit-app-region:drag;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:42px;height:42px;border-radius:8px;background:linear-gradient(135deg,#ff2bd6,#7a00ff);
+    display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;
+    color:#fff;font-size:14px;box-shadow:0 0 16px rgba(255,43,214,.6);
+  }
+  .brand h1{margin:0;font-family:'Press Start 2P',monospace;font-size:16px;letter-spacing:2px;color:var(--neon);text-shadow:0 0 10px var(--neon)}
+  .brand .sub{font-size:10px;letter-spacing:3px;color:#9fdcff;text-transform:uppercase;margin-top:2px}
+  .brand .sub b{color:var(--gold)}
+  .top-actions{display:flex;gap:8px;-webkit-app-region:no-drag}
+  .btn{
+    background:linear-gradient(135deg,#0b3a55,#0b1a30); color:var(--neon);
+    border:1px solid var(--border); padding:8px 14px; border-radius:8px;
+    font-family:'Press Start 2P',monospace; font-size:10px; letter-spacing:2px;
+    cursor:pointer; text-transform:uppercase; transition:.15s;
+  }
+  .btn:hover{background:#0a2540;box-shadow:0 0 12px rgba(0,229,255,.5)}
+  .btn.pink{color:#ff8ad8;border-color:rgba(255,43,214,.5)}
+  .btn.pink:hover{box-shadow:0 0 12px rgba(255,43,214,.5)}
+  .btn:active{transform:translateY(1px) scale(.98);filter:brightness(1.18)}
+  @keyframes mgaPanelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes mgaLogoPulse{0%,100%{box-shadow:0 0 16px rgba(255,43,214,.55)}50%{box-shadow:0 0 24px rgba(0,229,255,.68),0 0 12px rgba(255,43,214,.5)}}
+  @keyframes mgaGlow{0%,100%{box-shadow:0 0 10px rgba(255,43,214,.24)}50%{box-shadow:0 0 18px rgba(255,43,214,.48)}}
+  header,.side,footer{animation:mgaPanelIn .42s ease both}
+  header{animation-delay:.03s}.side{animation-delay:.1s}footer{animation-delay:.16s}
+  .logo{animation:mgaLogoPulse 4s ease-in-out infinite}
+  .row.sel{animation:mgaGlow 2.4s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+  /* ===== MAIN: art on left, panel on right ===== */
+  main{display:grid; grid-template-columns: 1fr 6px var(--sideW, 360px); gap:10px; min-height:0}
+  .resizer{
+    cursor:col-resize; background:rgba(0,229,255,.18); border-radius:3px;
+    transition:background .15s; position:relative;
+  }
+  .resizer:hover,.resizer.drag{background:var(--neon);box-shadow:0 0 10px rgba(0,229,255,.6)}
+  .resizer::before{
+    content:""; position:absolute; left:50%; top:50%; width:2px; height:40px;
+    transform:translate(-50%,-50%); background:rgba(255,255,255,.5); border-radius:2px;
+  }
+  .stage{ position:relative; border-radius:10px; overflow:hidden; border:1px solid rgba(0,229,255,.18) }
+  .stage::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(to right, transparent 70%, rgba(0,0,0,.65) 100%);
+    pointer-events:none;
+  }
+
+  /* ===== RIGHT PANEL ===== */
+  .side{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    display:flex; flex-direction:column; min-height:0;
+    box-shadow:0 0 22px rgba(0,229,255,.22), inset 0 0 14px rgba(0,229,255,.06);
+  }
+  .side .ph{
+    padding:10px 12px; border-bottom:1px solid rgba(0,229,255,.22);
+    font-family:'Press Start 2P',monospace; font-size:10px; color:var(--neon);
+    letter-spacing:2px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-controls{display:flex;gap:6px;-webkit-app-region:no-drag}
+  .pnl-btn{width:24px;height:18px;border:1px solid rgba(117,199,229,.52);border-radius:4px;background:rgba(2,8,18,.78);color:#c9f6ff;display:grid;place-items:center;padding:0;cursor:pointer;transition:.12s}
+  .pnl-btn svg{width:10px;height:10px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .pnl-btn:hover{border-color:var(--neon);color:#fff;background:rgba(0,229,255,.18);box-shadow:0 0 10px rgba(0,229,255,.38)}
+  .pnl-btn.close:hover{border-color:#ff4f8b;background:rgba(255,47,101,.2);box-shadow:0 0 10px rgba(255,47,101,.42)}
+  /* collapsed state: hide content, show only header */
+  .side.collapsed > :not(.ph){display:none !important}
+  .side.collapsed{min-height:auto}
+  .side.expand-up .title,.side.expand-up > .meta,.side.expand-up > .stat,.side.expand-up > .gameinfo,.side.expand-up > .play-btn{display:none !important}
+  .side.expand-up .listhdr{margin-top:6px}
+  .expand-names{margin-left:auto;background:rgba(255,213,79,.14);border:2px solid var(--gold);color:var(--gold);border-radius:5px;padding:5px 8px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;box-shadow:0 0 10px rgba(255,213,79,.35);white-space:nowrap}
+  .expand-names:hover{background:rgba(255,213,79,.28);box-shadow:0 0 16px rgba(255,213,79,.7)}
+  /* hidden state: panel removed; floating reopen button */
+  main.hide-side{grid-template-columns:1fr 0 0}
+  main.hide-side .resizer,main.hide-side .side{display:none}
+  .reopen-btn{position:fixed;top:50%;right:14px;transform:translateY(-50%);z-index:30;display:none;background:linear-gradient(135deg,#0b3a55,#0b1a30);color:var(--neon);border:1px solid var(--border);border-radius:8px;padding:10px 8px;font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;writing-mode:vertical-rl;text-orientation:mixed;box-shadow:0 0 14px rgba(0,229,255,.45)}
+  .reopen-btn.show{display:block}
+  .reopen-btn:hover{background:#0a2540;box-shadow:0 0 18px rgba(0,229,255,.7)}
+  .side .title{
+    padding:12px 14px 8px;
+    font-family:'Press Start 2P',monospace; color:#ff8ad8; font-size:14px; line-height:1.5;
+    text-shadow:0 0 10px rgba(255,43,214,.6);
+  }
+  .side .meta{ padding:0 14px 10px; font-size:10px; letter-spacing:1px; color:#9fdcff }
+  .side .meta b{color:#fff}
+  .side .stat{
+    margin:6px 14px 10px; padding:6px 8px; border:1px solid rgba(0,229,255,.25);
+    border-radius:6px; font-family:'Press Start 2P',monospace; font-size:8px; letter-spacing:1px;
+    color:#cfefff; background:rgba(0,0,0,.35);
+  }
+  .badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:1px;font-family:'Press Start 2P',monospace}
+  .badge.ok{background:#0a4;color:#fff}
+  .badge.bad{background:#a02;color:#fff}
+
+  .gameinfo{
+    margin:6px 14px; padding:8px; border:1px solid rgba(0,229,255,.25); border-radius:8px;
+    background:rgba(0,0,0,.4); display:flex; gap:10px; align-items:center; min-height:74px;
+  }
+  .gameinfo .thumb{
+    width:54px;height:54px;border-radius:6px;background:#080a18;border:1px solid rgba(0,229,255,.25);
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+  }
+  .gameinfo .info{flex:1;min-width:0}
+  .gameinfo .info .n{font-family:'Press Start 2P',monospace;color:var(--neon);font-size:11px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gameinfo .info .f{font-size:10px;color:#9fdcff;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .listhdr{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 14px; border-top:1px solid rgba(0,229,255,.22);
+    color:var(--neon2); font-family:'Press Start 2P',monospace; font-size:10px; letter-spacing:2px;
+  }
+  .listhdr .count{color:var(--gold)}
+  .search{padding:0 14px 8px}
+  .search input{
+    width:100%; background:rgba(0,0,0,.55); border:1px solid var(--border);
+    color:#fff; padding:8px 10px; border-radius:6px; font-family:inherit; font-size:12px; outline:none;
+  }
+  .search input:focus{border-color:var(--neon);box-shadow:0 0 8px rgba(0,229,255,.5)}
+
+  .list{flex:1; overflow:auto; padding:0 8px 8px}
+  .row{
+    display:flex; align-items:center; padding:9px 10px; margin:4px 0;
+    background:var(--rowBg); border:1px solid rgba(0,229,255,.12);
+    border-radius:6px; cursor:pointer; transition:.12s;
+    font-family:'Segoe UI',system-ui,sans-serif; font-size:14px; font-weight:600;
+    color:#eaf9ff; letter-spacing:.3px;
+  }
+  .row:hover{background:var(--rowHover);border-color:var(--neon);transform:translateX(2px)}
+  .row.sel{background:rgba(255,43,214,.22);border-color:var(--neon2);box-shadow:0 0 12px rgba(255,43,214,.35)}
+  .row .star{color:var(--gold);margin-right:6px;width:12px;display:inline-block}
+  .row .rt{width:44px;height:33px;object-fit:cover;border-radius:4px;margin-right:8px;background:#001320;border:1px solid rgba(0,229,255,.25);flex:0 0 auto}
+  .row .arrow{color:var(--neon2);margin-right:6px}
+  .row .n{flex:1;min-width:0}
+  .row .n .t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  .row .n .fn{display:block;font-size:11px;font-weight:400;color:#8fc9e6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+  .play-btn{
+    margin:0 14px 10px; width:calc(100% - 28px); padding:12px 10px;
+    background:linear-gradient(135deg,#00e5ff,#008fb3); color:#00131c;
+    border:none; border-radius:8px; font-family:'Press Start 2P',monospace;
+    font-size:11px; letter-spacing:2px; cursor:pointer;
+    box-shadow:0 0 18px rgba(0,229,255,.5); transition:.15s;
+  }
+  .play-btn:hover{filter:brightness(1.15);box-shadow:0 0 26px rgba(0,229,255,.8)}
+  .play-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+  #clock{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);letter-spacing:2px}
+
+  footer{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:6px 14px; background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    font-family:'Press Start 2P',monospace; font-size:9px; color:#9fdcff; letter-spacing:2px;
+  }
+  footer .right{color:var(--gold)}
+
+  /* ===== modals & toast ===== */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:20}
+  .modal.show{display:flex}
+  .modal .box{background:#0a0e1e;border:2px solid var(--neon);border-radius:12px;padding:18px;max-width:760px;width:92%;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,229,255,.6)}
+  .modal h3{margin:0 0 10px;color:var(--neon);font-family:'Press Start 2P',monospace;font-size:12px;letter-spacing:2px}
+  .crumb{font-size:11px;color:#9fdcff;background:rgba(0,0,0,.4);padding:8px;border-radius:6px;margin-bottom:8px;word-break:break-all}
+  .modal-list{flex:1;overflow:auto;border:1px solid rgba(0,229,255,.2);border-radius:6px}
+  .modal-list .mrow{padding:7px 10px;cursor:pointer;border-bottom:1px solid rgba(0,229,255,.08);display:flex;justify-content:space-between;font-size:12px}
+  .modal-list .mrow:hover{background:rgba(0,229,255,.12)}
+  .modal-list .mrow.exe{color:#ffd54f}
+  .modal .actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+
+  .toast{position:fixed;bottom:18px;right:18px;background:#0a0e1e;border:1px solid var(--neon);color:#fff;padding:12px 16px;border-radius:8px;z-index:50;display:none;box-shadow:0 0 22px rgba(0,229,255,.55);max-width:380px;font-size:13px}
+  .toast.show{display:block}
+  .toast.err{border-color:#ff4081;box-shadow:0 0 22px rgba(255,64,129,.55)}
+
+  /* small screens: stack panel below art */
+  @media (max-width: 880px){
+    main{grid-template-columns:1fr; grid-template-rows: 1fr auto}
+    .resizer{display:none}
+    .side{max-height:55vh}
+  }
+  /* ===== CONTROLS STUDIO ===== */
+  #controlsModal{background:radial-gradient(circle at 50% 10%,rgba(0,229,255,.12),rgba(0,0,0,.9) 58%),rgba(0,0,0,.88);backdrop-filter:blur(8px)}
+  #controlsModal .controls-box{max-width:1080px;width:min(1080px,96vw);max-height:90vh;padding:0;overflow:hidden;border:1px solid rgba(0,229,255,.6);background:linear-gradient(145deg,rgba(8,17,36,.98),rgba(5,8,21,.98));box-shadow:0 0 60px rgba(0,229,255,.24),0 0 120px rgba(255,43,214,.12)}
+  .controls-head{padding:22px 24px 18px;border-bottom:1px solid rgba(0,229,255,.2);background:linear-gradient(100deg,rgba(0,229,255,.1),rgba(255,43,214,.06) 58%,transparent)}
+  .controls-kicker{color:var(--gold);font:8px/1.4 'Press Start 2P',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+  .controls-head h3{margin:0 0 8px;font-size:15px;text-shadow:0 0 14px rgba(0,229,255,.45)}
+  .controls-subtitle{max-width:790px;margin:0;color:#a9d8eb;font-size:12px;line-height:1.65}
+  .controls-body{padding:16px 20px 18px;overflow:auto}
+  .controls-statusbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:12px}
+  .controls-profile-card,.controls-device-card{border:1px solid rgba(0,229,255,.25);background:rgba(0,0,0,.25);border-radius:10px;padding:11px 12px}
+  .controls-field{display:flex;align-items:center;gap:10px;min-width:0}
+  .controls-label{color:var(--gold);font:8px/1.2 'Press Start 2P',monospace;letter-spacing:1px;white-space:nowrap}
+  .controls-profile-card select{min-width:0;flex:1;background:rgba(2,10,24,.92);color:#eaf9ff;border-color:rgba(0,229,255,.38);font-size:10px;padding:9px 11px}
+  .controls-device-card{display:flex;align-items:center;gap:10px;white-space:nowrap}
+  .controls-toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:12px}
+  .controls-toolgroup{display:flex;flex-wrap:wrap;gap:6px;padding:9px;border:1px solid rgba(0,229,255,.15);border-radius:10px;background:rgba(0,0,0,.18)}
+  .controls-toolgroup .group-title{width:100%;color:#7ccfe7;font:7px/1.3 'Press Start 2P',monospace;letter-spacing:1px;margin-bottom:2px}
+  .controls-toolgroup .btn{flex:1;min-width:128px;padding:8px 9px;font-size:8px;letter-spacing:1px}
+  .controls-toolgroup .btn.pink{background:linear-gradient(135deg,rgba(109,20,91,.75),rgba(35,12,49,.9))}
+  .controls-device-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+  .controls-device-grid .controls-field{padding:10px 11px;border:1px solid rgba(0,229,255,.18);border-radius:10px;background:rgba(0,0,0,.2)}
+  .controls-device-grid select{min-width:0;flex:1;background:rgba(2,10,24,.9);color:#eaf9ff;border-color:rgba(0,229,255,.3);font-size:10px;padding:8px}
+  .controls-monitor{display:grid;grid-template-columns:1.1fr 1fr;gap:9px;margin-bottom:10px}
+  .controls-monitor-card{min-height:54px;padding:10px 12px;border:1px solid rgba(0,229,255,.18);border-radius:10px;background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(0,0,0,.28))}
+  .controls-monitor-label{display:block;color:#6bbbd5;font:7px/1.2 'Press Start 2P',monospace;letter-spacing:1px;margin-bottom:7px}
+  #controlDeviceInfo{font-size:11px!important;color:#b8e8f7!important;min-height:18px}
+  #controlVisual{min-height:27px!important;gap:6px!important}
+  #controlVisual span{background:rgba(0,229,255,.05);box-shadow:inset 0 0 10px rgba(0,229,255,.05);font-family:'Press Start 2P',monospace;font-size:8px!important}
+  #controlDiagnostics{min-height:20px!important;margin:0!important;color:#ffe083!important;font-size:10px!important}
+  .controls-bindings-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 7px;color:var(--neon);font:9px/1.3 'Press Start 2P',monospace;letter-spacing:1px}
+  .controls-bindings-head span:last-child{color:#76bdd2;font:9px/1.3 'Segoe UI',system-ui,sans-serif;letter-spacing:0}
+  #controlRows{max-height:330px!important;padding:2px;border:1px solid rgba(0,229,255,.18);border-radius:10px;background:rgba(0,0,0,.2);overflow:auto!important}
+  #controlRows > div{border-color:rgba(0,229,255,.17)!important;background:linear-gradient(135deg,rgba(11,32,55,.8),rgba(5,12,28,.84));transition:.16s;min-height:58px}
+  #controlRows > div:hover{border-color:rgba(0,229,255,.65)!important;box-shadow:0 0 14px rgba(0,229,255,.16);transform:translateY(-1px)}
+  #controlRows b{font-size:9px!important;letter-spacing:.5px}
+  #controlRows button{border-radius:5px;padding:6px 8px;font-size:8px;letter-spacing:1px}
+  .controls-capture-hint{min-height:27px;margin-top:9px;padding:8px 10px;border-left:3px solid var(--neon);border-radius:5px;background:rgba(0,229,255,.07);color:#7eeeff!important;font-size:11px!important}
+  .controls-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(0,229,255,.18)}
+  .controls-footer-note{color:#6eaec1;font-size:10px;line-height:1.4}
+  .controls-footer .actions{margin:0}
+  @media (max-width:800px){#controlsModal .controls-box{width:98vw;max-height:94vh}.controls-statusbar,.controls-toolbar,.controls-monitor{grid-template-columns:1fr}.controls-device-grid{grid-template-columns:1fr}.controls-body{padding:13px}.controls-head{padding:18px 16px 15px}.controls-toolgroup .btn{min-width:112px}}
+</style>
+</head>
+<body>
+<div class="bg-slide old current" id="bgOld"></div>
+<div class="bg-slide new" id="bgNew"></div>
+<div class="window-controls" aria-label="Controles da janela">
+  <button class="win-btn" id="winMin" title="Minimizar" aria-label="Minimizar"><svg viewBox="0 0 16 16"><path d="M3 13h10"/></svg></button>
+  <button class="win-btn" id="winMax" title="Maximizar ou restaurar" aria-label="Maximizar ou restaurar"><svg viewBox="0 0 16 16"><path d="M5 11 11 5"/><path d="M7 5h4v4"/><path d="M11 11H5V5"/></svg></button>
+  <button class="win-btn close" id="winClose" title="Fechar" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+</div>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">MG</div>
+      <div>
+        <h1>MASTER GAMES ARCADE</h1>
+        <div class="sub">MAME LAUNCHER · <b>DEV EMERSON 2026</b></div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <label class="btn" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px">
+        <span style="color:#ffd54f;font-size:9px">EMULADOR</span>
+        <select id="selEmu" style="background:#0a1a2e;color:#00e5ff;border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-family:inherit;font-size:11px;outline:none;cursor:pointer">
+          <option value="">Carregando…</option>
+        </select>
+      </label>
+      <button class="btn" id="btnConfig" title="Abrir todas as configurações">⚙ CONFIGURAÇÃO</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stage"></div>
+    <div class="resizer" id="resizer" title="Arraste para redimensionar"></div>
+    <div class="side" id="side">
+      <div class="ph">
+        <span>// MAME LAUNCHER <span style="color:var(--gold)">DESKTOP</span></span>
+        <span class="panel-controls" aria-label="Controles do painel">
+          <button class="pnl-btn" id="pnlMin" title="Recolher painel" aria-label="Recolher"><svg viewBox="0 0 16 16"><path d="M3 13h10"/></svg></button>
+          <button class="pnl-btn" id="pnlMax" title="Expandir/Restaurar painel" aria-label="Expandir"><svg viewBox="0 0 16 16"><path d="M3 3h10v10H3z"/></svg></button>
+          <button class="pnl-btn close" id="pnlClose" title="Ocultar painel" aria-label="Ocultar"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+        </span>
+      </div>
+      <div class="title">SELECIONE<br>SEU JOGO</div>
+      <div class="meta">EMU: <span id="mameStatus" class="badge bad">NO</span> · GAMES: <b id="gamesCount">0</b> · OK: <b id="playCount">0</b> · FAVS: <b id="favsCount">0</b></div>
+      <div class="meta">CONTROLE USB: <span id="padStatus" class="badge bad">—</span> <span id="padName" style="color:#9fdcff"></span></div>
+      <div class="meta">TECLADO: <span id="keyboardStatus" class="badge ok">AUTO</span> · BIOS: <span id="biosStatus" class="badge bad">VERIFICANDO</span></div>
+      <div class="stat" id="stat">CARREGANDO…</div>
+
+      <div class="ph" style="border-top:1px solid rgba(0,229,255,.22);border-bottom:none">// GAME INFO</div>
+      <div class="gameinfo">
+        <div class="thumb">🎮</div>
+        <div class="info">
+          <div class="n" id="curName">—</div>
+          <div class="f" id="curFile">selecione abaixo</div>
+        </div>
+      </div>
+      <button class="play-btn" id="btnPlay" disabled>▶ JOGAR AGORA</button>
+
+      <div class="listhdr"><span>▸ GAMES <span class="count" id="counter">0</span></span><button class="expand-names" id="btnExpandNames" type="button">↑ EXPANDIR</button></div>
+      <div class="search"><input id="search" type="text" placeholder="Procure...  (tecle / )" autofocus></div>
+      <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap;padding:0 8px 6px">
+        <button class="btn chip" data-mode="all">TODOS</button>
+        <button class="btn chip" data-mode="ok">✔ JOGÁVEIS</button>
+        <button class="btn chip" data-mode="fav">★ FAVORITOS</button>
+        <button class="btn chip" data-mode="recent">🕐 RECENTES</button>
+      </div>
+      <div class="list" id="games"></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>↳ ENTER inicia · F favorita · / busca · ESC sai do MAME</span>
+    <span id="clock">--:--</span>
+    <span class="right">★ 2026 MASTER GAMES ARCADE · MAME LAUNCHER ULTIMATE</span>
+  </footer>
+</div>
+<button class="reopen-btn" id="reopenSide" title="Mostrar painel">▸ JOGOS</button>
+
+<div class="modal" id="browser">
+  <div class="box">
+    <h3 id="browserTitle">Selecionar</h3>
+    <div class="crumb" id="browserPath">—</div>
+    <input id="folderInput" class="search" placeholder="Digite o endereço completo da pasta de ROMs (ex.: C:\\MasterGamesArcade\\roms)" autocomplete="off" />
+    <div class="modal-list" id="browserList"></div>
+    <div class="actions">
+      <button class="btn" id="useFolder">✓ USAR ESTA PASTA</button>
+      <button class="btn" id="browserUp">⬆ SUBIR</button>
+      <button class="btn pink" id="browserClose">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="helpModal">
+  <div class="box" style="max-width:820px">
+    <h3>? O QUE É NECESSÁRIO PARA JOGAR</h3>
+    <div style="color:#cfefff;font-size:13px;line-height:1.55;overflow:auto">
+      <p><b style="color:#00e5ff">MANUAL DE USUÁRIO — PRIMEIRO USO</b><br>Abra o Master Games Arcade e aguarde a tela principal carregar. O aplicativo inicia em tela cheia e mostra a lista de jogos encontrados na pasta de ROMs configurada.</p>
+      <p><b style="color:#00e5ff">1. Escolher a origem das ROMs</b><br>Abra <b>CONFIGURAÇÃO</b>. Em <b>ORIGEM DAS ROMs</b>, escolha <b>Usar ROMs da pasta do PC</b> para usar uma coleção que já está no computador, ou <b>Baixar ROMs do Google Drive</b> para iniciar o download. A escolha é salva no computador.</p>
+      <p><b style="color:#00e5ff">2. Selecionar a pasta das ROMs</b><br>No modo local, clique em <b>ESCOLHER PASTA DE ROMs</b>. Digite o endereço completo da pasta ou navegue pelas pastas, selecione a pasta correta e clique em <b>USAR ESTA PASTA</b>. Depois clique em <b>ATUALIZAR JOGOS</b>. Enquanto o modo local estiver escolhido, o sistema não baixa ROMs do Google Drive.</p>
+      <p><b style="color:#00e5ff">3. Baixar ROMs</b><br>Para usar o download automático, altere explicitamente a origem para <b>Baixar ROMs do Google Drive</b> e clique em <b>BAIXAR AGORA</b>. A janela mostra o progresso. Não feche o launcher durante o download.</p>
+      <p><b style="color:#00e5ff">4. Escolher e iniciar um jogo</b><br>Use a busca para localizar um jogo, clique no nome e pressione <b>JOGAR</b> ou <b>Enter</b>. Se outro jogo estiver aberto, o MAME anterior será encerrado antes do novo jogo iniciar.</p>
+      <p><b style="color:#00e5ff">5. Teclado</b><br>As setas navegam pela lista. <b>Enter</b> inicia o jogo selecionado, <b>F</b> adiciona ou remove favoritos, <b>/</b> ativa a busca, <b>1</b> é Start, <b>5</b> é Coin e <b>Esc</b> sai do MAME.</p>
+      <p><b style="color:#00e5ff">6. Controles USB, arcade e PlayStation</b><br>Conecte o controle antes de clicar em <b>CONTROLES USB</b>. Escolha <b>Arcade USB universal</b> ou <b>PlayStation padrão</b>, ou use <b>CAPTURAR</b> para pressionar cada botão físico. Clique em <b>SALVAR NO MAME</b>; o mapa será aplicado ao MAMEPlus para todos os jogos, sem configurar jogo por jogo.</p>
+      <p><b style="color:#ffd54f">7. BIOS</b><br>Algumas famílias precisam de BIOS na mesma pasta das ROMs. O launcher verifica <code>neogeo.zip</code>, <code>qsound.zip</code>, <code>pgm.zip</code>, <code>ar_bios.zip</code>, <code>nss.zip</code>, <code>awbios.zip</code> e <code>naomi.zip</code>. BIOS são arquivos do sistema do arcade, não drivers de teclado ou controle.</p>
+      <p><b style="color:#00e5ff">8. Imagens e áudio</b><br>Use <b>IMAGENS</b> para baixar as artes dos jogos. A música ambiente da tela de seleção inicia automaticamente.</p>
+      <p><b style="color:#ff8ad8">Se algo não funcionar</b><br>Confirme a origem selecionada, confira o caminho da pasta, clique em <b>ATUALIZAR JOGOS</b>, verifique o MAMEPlus, BIOS e controles USB. O jogo precisa estar na versão compatível com o MAMEPlus 0.168.2.</p>
+    </div>
+    <div class="actions"><button class="btn pink" id="helpClose">FECHAR</button></div>
+  </div>
+</div>
+
+<div class="modal" id="aboutModal">
+  <div class="box">
+    <h3>ℹ SOBRE O SISTEMA</h3>
+    <div id="aboutBody" style="overflow:auto;font-size:13px;color:#dff4ff;line-height:1.55">Carregando…</div>
+    <div class="actions">
+      <button class="btn pink" id="aboutClose">FECHAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="configModal">
+  <div class="box" style="max-width:980px">
+    <h3>⚙ CONFIGURAÇÃO DO LAUNCHER</h3>
+    <p style="color:#9fdcff;font-size:12px;line-height:1.45;margin:0 0 12px">Todas as funções do sistema estão reunidas aqui. Escolha uma ação abaixo; o painel será fechado automaticamente quando a ação iniciar.</p>
+    <div style="margin:8px 0 12px;padding:10px;border:1px solid rgba(0,229,255,.25);border-radius:8px;background:rgba(0,0,0,.28)">
+      <div style="color:#ffd54f;font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1px;margin-bottom:7px">ORIGEM DAS ROMs</div>
+      <select id="romSource" class="btn" style="width:100%;text-align:left">
+        <option value="local">Usar ROMs da pasta do PC</option>
+        <option value="drive">Baixar ROMs do Google Drive</option>
+      </select>
+      <div id="romSourceHint" style="margin-top:6px;color:#9fdcff;font-size:11px">O launcher usará a pasta de ROMs configurada no computador.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px" id="configActions">
+      <button class="btn" id="btnRoms">📁 ESCOLHER PASTA DE ROMs</button>
+      <button class="btn" id="btnDownload" title="Baixar ROMs do Google Drive">⬇ BAIXAR ROMs</button>
+      <button class="btn pink" id="btnDownloadNow" title="Iniciar o download automático das ROMs">⬇ BAIXAR AGORA</button>
+      <button class="btn" id="btnValidate" title="Atualizar a lista de jogos aprovados">✔ ATUALIZAR JOGOS</button>
+      <button class="btn pink" id="btnControls">🎮 CONFIGURAR CONTROLES</button>
+      <button class="btn" id="btnImages" title="Baixar as imagens dos jogos">🖼 IMAGENS</button>
+      <button class="btn" id="btnAbout" title="Dados completos do sistema">ℹ SOBRE</button>
+      <button class="btn" id="btnHelp" title="O que é necessário para jogar">? AJUDA</button>
+    </div>
+    <div class="actions"><button class="btn pink" id="configClose">FECHAR</button></div>
+  </div>
+</div>
+
+<div class="modal" id="controlsModal">
+  <div class="box controls-box">
+    <div class="controls-head">
+      <div class="controls-kicker">MASTER GAMES ARCADE · CONFIGURAÇÃO FÁCIL</div>
+      <h3>🎮 CONFIGURAÇÃO DOS CONTROLES</h3>
+      <p class="controls-subtitle">Escolha o tipo de controle, conecte-o e configure cada botão seguindo as instruções. As alterações são salvas automaticamente e usadas nos jogos.</p>
+    </div>
+    <div class="controls-body">
+      <div class="controls-statusbar">
+        <div class="controls-profile-card controls-field">
+          <label class="controls-label" for="controlPreset">TIPO DE CONTROLE</label>
+          <select id="controlPreset" class="btn"><option value="arcade-usb">Automático</option><option value="dragonrise">Arcade de um controle</option><option value="directinput">Arcade com dois controles</option><option value="playstation">Controle PlayStation</option><option value="manual">Configuração personalizada</option></select>
+        </div>
+        <div class="controls-device-card"><span class="controls-label">SITUAÇÃO DO CONTROLE</span><span id="controlPadInfo" class="badge bad">Conecte o controle</span></div>
+      </div>
+      <div class="controls-toolbar">
+        <div class="controls-toolgroup"><span class="group-title">TESTAR E CONFIGURAR</span><button class="btn" id="controlsTest">▣ TESTAR BOTÕES</button><button class="btn pink" id="controlsGuide">▶ CONFIGURAÇÃO PASSO A PASSO</button></div>
+        <div class="controls-toolgroup"><span class="group-title">MINHA CONFIGURAÇÃO</span><button class="btn" id="controlsBackup">⇩ GUARDAR CONFIGURAÇÃO</button><button class="btn" id="controlsRestore">⇧ CARREGAR CONFIGURAÇÃO</button><button class="btn" id="controlsReset">↺ VOLTAR AO PADRÃO</button></div>
+        <div class="controls-toolgroup"><span class="group-title">VERIFICAR CONTROLE</span><select id="controlsPlayer" class="btn" aria-label="Jogador"><option value="1">JOGADOR 1</option><option value="2">JOGADOR 2</option></select><button class="btn" id="controlsDetect">⟳ PROCURAR CONTROLE</button><button class="btn" id="controlsHid">⌁ VER DETALHES DO USB</button></div>
+      </div>
+      <input id="controlsRestoreFile" type="file" accept="application/json,.json" style="display:none">
+      <div class="controls-device-grid">
+        <div class="controls-field"><label class="controls-label" for="padDeviceP1">CONTROLE DO JOGADOR 1</label><select id="padDeviceP1" class="btn"><option value="">— nenhum —</option></select></div>
+        <div class="controls-field"><label class="controls-label" for="padDeviceP2">CONTROLE DO JOGADOR 2</label><select id="padDeviceP2" class="btn"><option value="">— nenhum —</option></select></div>
+      </div>
+      <div class="controls-monitor">
+        <div class="controls-monitor-card"><span class="controls-monitor-label">CONTROLE CONECTADO</span><div id="controlDeviceInfo">Dispositivo: aguardando controle…</div></div>
+        <div class="controls-monitor-card"><span class="controls-monitor-label">BOTÕES EM TEMPO REAL</span><div id="controlVisual"></div></div>
+      </div>
+      <div id="controlDiagnostics" class="controls-monitor-card">Verificando se há botões repetidos…</div>
+      <div class="controls-bindings-head"><span>BOTÕES DO JOGO</span><span>ESCOLHA CONFIGURAR PARA ALTERAR</span></div>
+      <div id="controlRows"></div>
+      <div id="controlCaptureHint" class="controls-capture-hint"></div>
+      <div class="controls-footer"><div class="controls-footer-note">Salvamento automático ativo · cópias de segurança ativadas · menu e voltar continuam no teclado</div><div class="actions"><button class="btn" id="controlsSave">✓ APLICAR NOS JOGOS</button><button class="btn pink" id="controlsClose">FECHAR</button></div></div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="dlModal">
+  <div class="box">
+    <h3>⬇ BAIXAR ROMs (Google Drive)</h3>
+    <div class="crumb" id="dlInfo">Preparando…</div>
+    <div id="dlProgWrap" style="background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:6px;height:22px;overflow:hidden;margin:8px 0">
+      <div id="dlProgBar" style="height:100%;width:0%;background:linear-gradient(90deg,#00e5ff,#ff2bd6);transition:width .3s;box-shadow:0 0 12px rgba(0,229,255,.6)"></div>
+    </div>
+    <div id="dlCurrent" style="font-size:11px;color:#9fdcff;font-family:'Press Start 2P',monospace;letter-spacing:1px">—</div>
+    <div id="dlLog" style="margin-top:8px;max-height:180px;overflow:auto;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.15);border-radius:6px;padding:6px 8px;font-size:11px;color:#cfefff"></div>
+    <div class="actions">
+      <a class="btn" id="dlOpenDrive" href="https://drive.google.com/drive/folders/1WdYP36QIdnxxhFhpZOJf0ly6zd9mAGzo?usp=drive_link" target="_blank" rel="noreferrer">🌐 ABRIR GOOGLE DRIVE</a>
+      <button class="btn" id="dlChooseFolder">📁 USAR PASTA BAIXADA</button>
+      <button class="btn pink" id="dlClose">FECHAR</button>
+    </div>
+  </div>
+</div>
+
+<audio id="menuMusic" src="menu-arcade-ambience.mp3" loop preload="auto"></audio>
+
+<script>
+const API=window.location.protocol==="file:"?"http://127.0.0.1:7777":window.location.origin;
+let state={config:{},roms:[],titles:{},filter:"",sel:null,mode:localStorage.getItem("mga.mode")||"all",recent:JSON.parse(localStorage.getItem("mga.recent")||"[]"),favs:new Set(JSON.parse(localStorage.getItem("mga.favs")||"[]")),renderMarkup:""};
+let romSource=localStorage.getItem("mga.romSource")||"local";
+const currentRomSource=()=>romSource==="drive"?"drive":"local";
+function updateRomSourceUI(){
+  const s=$("romSource"), h=$("romSourceHint");
+  if(s)s.value=currentRomSource();
+  if(h)h.textContent=currentRomSource()==="drive"?"Ignora a pasta do PC e baixa as ROMs faltantes para o destino padrão do sistema.":"O launcher usará a pasta de ROMs configurada no computador.";
+}
+let browserMode=null, browserPath="";
+const $=(id)=>document.getElementById(id);
+const menuMusic=$("menuMusic");
+async function startMenuMusic(){
+  if(!menuMusic)return;
+  menuMusic.volume=0.16;
+  try{ await menuMusic.play(); }catch{}
+}
+// O áudio é parte fixa do menu: não existe mais botão para desligá-lo.
+startMenuMusic();
+["pointerdown","keydown","gamepadconnected"].forEach(ev=>document.addEventListener(ev,()=>startMenuMusic(),{once:true,passive:true}));
+const toast=(m,e)=>{const t=$("toast");t.textContent=m;t.className="toast show"+(e?" err":"");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),3500)};
+const setupWindowControls=()=>{
+  const api=window.mgaWindow;
+  if(!api)return;
+  $("winMin").onclick=()=>api.minimize();
+  $("winMax").onclick=()=>api.toggleMaximize();
+  $("winClose").onclick=()=>api.close();
+};
+
+const setupBackgroundSlideshow=()=>{
+  const oldBg=$("bgOld"), newBg=$("bgNew");
+  if(!oldBg||!newBg)return;
+  // As duas imagens ficam sempre disponíveis; apenas a opacidade alterna.
+  // O estado manual anterior é ignorado para evitar que uma imagem desapareça.
+  let current=0;
+  const apply=()=>{
+    oldBg.classList.toggle("current", current===0);
+    newBg.classList.toggle("current", current===1);
+  };
+  const next=()=>{ current=current===0?1:0; apply(); };
+  apply();
+  window.setInterval(next,8000);
+};
+
+const setupResizer=()=>{
+  const r=$("resizer"), main=document.querySelector("main");
+  if(!r||!main)return;
+  const saved=parseInt(localStorage.getItem("mga.sideW")||"",10);
+  if(saved>0) main.style.setProperty("--sideW", saved+"px");
+  let drag=false;
+  const onMove=(e)=>{
+    if(!drag)return;
+    const rect=main.getBoundingClientRect();
+    let w=rect.right-e.clientX;
+    const min=220, max=Math.max(min, rect.width-300);
+    w=Math.min(max, Math.max(min,w));
+    main.style.setProperty("--sideW", w+"px");
+  };
+  const stop=()=>{
+    if(!drag)return;
+    drag=false; r.classList.remove("drag");
+    document.body.style.userSelect="";
+    const cur=getComputedStyle(main).getPropertyValue("--sideW").trim();
+    if(cur) localStorage.setItem("mga.sideW", parseInt(cur,10));
+    window.removeEventListener("mousemove",onMove);
+    window.removeEventListener("mouseup",stop);
+  };
+  r.addEventListener("mousedown",(e)=>{
+    drag=true; r.classList.add("drag");
+    document.body.style.userSelect="none";
+    window.addEventListener("mousemove",onMove);
+    window.addEventListener("mouseup",stop);
+    e.preventDefault();
+  });
+  r.addEventListener("dblclick",()=>{
+    main.style.setProperty("--sideW","360px");
+    localStorage.setItem("mga.sideW","360");
+  });
+};
+
+const setupPanelControls=()=>{
+  const side=$("side"), main=document.querySelector("main"), reopen=$("reopenSide");
+  if(!side||!main)return;
+  // restore state
+  if(localStorage.getItem("mga.side.collapsed")==="1") side.classList.add("collapsed");
+  if(localStorage.getItem("mga.side.hidden")==="1"){main.classList.add("hide-side");reopen.classList.add("show")}
+  if(localStorage.getItem("mga.side.expandUp")==="1"){side.classList.add("expand-up");$("btnExpandNames").textContent="↓ RECOLHER"}
+  let prevW=null;
+  $("pnlMin").onclick=()=>{
+    side.classList.toggle("collapsed");
+    localStorage.setItem("mga.side.collapsed", side.classList.contains("collapsed")?"1":"0");
+  };
+  $("pnlMax").onclick=()=>{
+    const cur=parseInt(getComputedStyle(main).getPropertyValue("--sideW"),10)||360;
+    const rect=main.getBoundingClientRect();
+    const big=Math.max(360, Math.floor(rect.width*0.65));
+    if(cur<big){ prevW=cur; main.style.setProperty("--sideW", big+"px"); localStorage.setItem("mga.sideW", big);}
+    else { const back=prevW||360; main.style.setProperty("--sideW", back+"px"); localStorage.setItem("mga.sideW", back);}
+  };
+  $("btnExpandNames").onclick=()=>{
+    side.classList.toggle("expand-up");
+    const expanded=side.classList.contains("expand-up");
+    localStorage.setItem("mga.side.expandUp", expanded ? "1" : "0");
+    $("btnExpandNames").textContent=expanded ? "↓ RECOLHER" : "↑ EXPANDIR";
+  };
+  $("pnlClose").onclick=()=>{
+    main.classList.add("hide-side"); reopen.classList.add("show");
+    localStorage.setItem("mga.side.hidden","1");
+  };
+  reopen.onclick=()=>{
+    main.classList.remove("hide-side"); reopen.classList.remove("show");
+    localStorage.setItem("mga.side.hidden","0");
+  };
+};
+
+async function api(p,o){const r=await fetch(API+p,o);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||("HTTP "+r.status));return d}
+
+let romAutoStarted=false;
+let romAutoPollTimer=null;
+let romAutoAttempted=false;
+
+async function startRomDownload(target=""){
+  if(currentRomSource()!=="drive"){ toast("Modo local ativo: selecione a pasta das ROMs; nenhum download será iniciado",true); return; }
+  if(romAutoStarted)return;
+  romAutoAttempted=true;
+  romAutoStarted=true;
+  try{
+    const body=target?{target,source:"drive"}:{source:"drive"};
+    const s=await api("/api/roms/download-all",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    toast(s.alreadyRunning?"⬇ ROMs já estão sendo baixadas…":"⬇ Download automático das ROMs iniciado…");
+    if(typeof openDownloadModal==="function") openDownloadModal();
+    pollRomDownload();
+  }catch(e){
+    romAutoStarted=false;
+    toast("Falha no download automático: "+e.message,true);
+  }
+}
+
+async function pollRomDownload(){
+  if(romAutoPollTimer)clearInterval(romAutoPollTimer);
+  const tick=async()=>{
+    try{
+      const s=await api("/api/roms/status");
+      if(s.running){
+        const total=s.total||0, done=s.done||0;
+        $("stat").textContent=total?`BAIXANDO ROMs ${done}/${total}`:"BAIXANDO ROMs…";
+        $("games").innerHTML=`<div style="padding:20px;text-align:center;color:#9fdcff;font-size:11px">BAIXANDO ROMs AUTOMATICAMENTE…<br><small>${done}/${total||"…"}</small></div>`;
+        return;
+      }
+      if(s.finishedAt || (s.total&&s.done>=s.total)){
+        clearInterval(romAutoPollTimer);romAutoPollTimer=null;romAutoStarted=false;
+        toast(`✓ Download concluído: ${s.ok||s.done||0} ROMs`);
+        await loadConfig();
+      }
+    }catch{}
+  };
+  await tick();
+  romAutoPollTimer=setInterval(tick,1000);
+}
+
+async function ensureRomsAuto(c){
+  if(currentRomSource()!=="drive")return;
+  if(romAutoAttempted)return;
+  try{
+    const manifest=await api("/api/roms/manifest");
+    const expected=(manifest.files||[]).filter(f=>!f.skipDownload).map(f=>String(f.name||"").toLowerCase()).filter(Boolean);
+    if(!expected.length)return;
+    const present=new Set((state.roms||[]).map(name=>String(name).toLowerCase()));
+    const missing=expected.filter(name=>!present.has(name));
+    if(!missing.length){ $("stat").textContent=`${state.roms.length} ROMs ENCONTRADAS`; return; }
+    const s=await api("/api/roms/status");
+    if(s.running){romAutoStarted=true;pollRomDownload();return;}
+    if(s.finishedAt){romAutoAttempted=true;return;}
+    toast(`⬇ ${missing.length} ROMs faltantes — iniciando download…`);
+    await startRomDownload("");
+  }catch(e){ console.warn("[ROM AUTO]",e); }
+}
+
+async function loadConfig(){
+  $("stat").textContent="CONECTANDO…";
+  try{
+    const c=await api("/api/config"); state.config=c;
+    await loadTitles();
+    await loadEmulators();
+    if(c.romsDir){ await loadRoms(c.romsDir) }
+    else { state.roms=[]; $("gamesCount").textContent="0"; $("games").innerHTML='<div style="padding:20px;text-align:center;color:#9fdcff;font-size:11px">BAIXANDO ROMs AUTOMATICAMENTE…</div>'; $("stat").textContent="BAIXANDO ROMs…" }
+    await ensureRomsAuto(c);
+    await loadBiosStatus();
+  }catch(e){ $("stat").textContent="ERRO: "+e.message; toast("Falha: "+e.message,true) }
+}
+
+async function loadTitles(){
+  // 1) fallback estático embarcado
+  try{
+    const r=await fetch("/game-titles.json",{cache:"no-cache"});
+    if(r.ok){ state.titles={...(await r.json())}; }
+  }catch{}
+  // 2) merge com cache local do backend; o backend não executa MAME para listar títulos
+  try{
+    const r=await api("/api/roms/titles");
+    if(r && r.titles){ state.titles={...state.titles, ...r.titles}; }
+  }catch{}
+}
+
+async function loadBiosStatus(){
+  const el=$("biosStatus");
+  if(!el)return;
+  try{
+    const b=await api("/api/bios/status");
+    el.textContent=b.ready ? "OK" : `FALTAM ${b.missing.length}`;
+    el.className="badge "+(b.ready?"ok":"bad");
+    el.title=b.ready ? "BIOS necessárias encontradas" : "Ausentes: "+b.missing.join(", ");
+  }catch{ el.textContent="OFF"; el.className="badge bad"; }
+}
+
+async function loadEmulators(){
+  try{
+    const r=await api("/api/emulators");
+    state.emulators=(r.emulators||[]).filter(e=>e.available);
+    const sel=$("selEmu");
+    if(!state.emulators.length){
+      sel.innerHTML='<option value="">— nenhum embutido —</option>';
+      $("mameStatus").textContent="NO"; $("mameStatus").className="badge bad";
+      return;
+    }
+    sel.innerHTML=state.emulators.map(e=>`<option value="${e.id}">${e.label}</option>`).join("");
+    const saved=localStorage.getItem("mga.emulator");
+    if(saved && state.emulators.find(e=>e.id===saved)) sel.value=saved;
+    state.emulator=sel.value;
+    sel.onchange=()=>{ state.emulator=sel.value; localStorage.setItem("mga.emulator", sel.value); toast("Emulador: "+sel.options[sel.selectedIndex].text); };
+    $("mameStatus").textContent="OK"; $("mameStatus").className="badge ok";
+  }catch(e){ $("mameStatus").textContent="ERR"; $("mameStatus").className="badge bad"; }
+}
+
+async function loadRoms(p){
+  $("stat").textContent="LENDO ROMs…";
+  try{
+    const r=await api("/api/roms?path="+encodeURIComponent(p));
+    state.roms=r.roms||[];
+    // Se uma versão anterior deixou o painel recolhido, reabre-o ao carregar as ROMs.
+    const side=$("side");
+    if(side && state.roms.length){ side.classList.remove("collapsed"); localStorage.removeItem("mga.side.collapsed"); }
+    $("gamesCount").textContent=state.roms.length;
+    $("favsCount").textContent=state.favs.size;
+    $("stat").textContent=state.roms.length+" ROMs ENCONTRADAS";
+    renderGames();
+    ensureValidation();
+  }catch(e){ $("games").innerHTML=`<div style="padding:20px;text-align:center;color:#ff8ad8;font-size:11px">${e.message}</div>`; $("stat").textContent="ERRO" }
+}
+
+// ===== Coleção aprovada para MAMEPlus 0.168.2 =====
+state.valid = state.valid || {};
+async function loadValidationOnce(){
+  try{
+    const v=await api("/api/roms/validation");
+    state.valid=v.results||{};
+    if(v.running){ $("stat").textContent=`ATUALIZANDO ${v.done}/${v.total}…`; }
+    else if(v.total||v.cachedAt){ const games=Object.values(state.valid).filter(x=>x.playable&&x.kind!=="bios").length; $("stat").textContent=`${games} JOGOS APROVADOS · COLEÇÃO OK`; }
+    renderGames();
+    return v;
+  }catch{ return null }
+}
+async function ensureValidation(){
+  const v=await loadValidationOnce();
+  if(v && !v.running && !v.cachedAt && !v.total){
+    try{ await api("/api/roms/validate",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}); }catch{}
+  }
+  clearInterval(ensureValidation._t);
+  ensureValidation._t=setInterval(async()=>{
+    const s=await loadValidationOnce();
+    if(s && !s.running && (s.total||s.cachedAt)) clearInterval(ensureValidation._t);
+  },4000);
+}
+async function revalidate(){
+  toast("Lendo novas ROMs da pasta…");
+  try{
+    // Atualiza a lista local sem baixar nada novo.
+    if(state.config.romsDir) await loadRoms(state.config.romsDir);
+    await api("/api/roms/validate",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+    ensureValidation();
+    toast("✓ Lista atualizada com as ROMs locais");
+  }catch(e){ toast(e.message,true) }
+}
+window.mgaRevalidate=revalidate;
+
+function renderGames(){
+  const f=state.filter.toLowerCase();
+  const titleOf=(r)=>{
+    const short=r.replace(/\.(zip|7z|chd)$/i,"");
+    return (state.titles && state.titles[short]) || short.toUpperCase();
+  };
+  const list=state.roms.filter(r=>{
+    if(f && !(r.toLowerCase().includes(f) || titleOf(r).toLowerCase().includes(f))) return false;
+    const v=state.valid[r.replace(/\.(zip|7z|chd)$/i,"")]||null;
+    if(state.mode==="ok") return !!(v&&v.playable&&v.kind!=="bios");
+    if(state.mode==="fav") return state.favs.has(r);
+    if(state.mode==="recent") return state.recent.includes(r);
+    return true;
+  });
+  const vinfo=(r)=>state.valid[r.replace(/\.(zip|7z|chd)$/i,"")]||null;
+  const isBios=(r)=>{const v=vinfo(r);return v&&v.kind==="bios"};
+  const rank=(r)=>{const v=vinfo(r);if(isBios(r))return 2;if(!v)return 1;return v.playable?0:1.5};
+  // favs primeiro, depois jogos validados, ordenado pelo nome REAL
+  list.sort((a,b)=>{
+    if(state.mode==="recent") return state.recent.indexOf(a)-state.recent.indexOf(b);
+    const fa=state.favs.has(a),fb=state.favs.has(b);
+    if(fa!==fb) return fa?-1:1;
+    const ra=rank(a),rb=rank(b);
+    if(ra!==rb) return ra-rb;
+    return titleOf(a).localeCompare(titleOf(b));
+  });
+  $("counter").textContent=list.length;
+  const playable=state.roms.filter(r=>{const v=state.valid[r.replace(/\.(zip|7z|chd)$/i,"")];return v&&v.playable&&v.kind!=="bios"}).length;
+  const pEl=$("playCount"); if(pEl) pEl.textContent=playable;
+  document.querySelectorAll("#chips .chip").forEach(c=>{c.style.opacity=c.dataset.mode===state.mode?"1":".55";c.style.borderColor=c.dataset.mode===state.mode?"#6cff9e":""});
+  if(!list.length){ $("games").innerHTML='<div style="padding:20px;text-align:center;color:#9fdcff;font-size:11px">Nenhum jogo neste filtro.</div>'; return }
+  const markup=list.map(r=>{
+    const name=titleOf(r);
+    const fav=state.favs.has(r);
+    const safe=name.replace(/</g,"&lt;");
+    const v=vinfo(r);
+    let mark="", tip=r;
+    if(v && v.kind==="bios"){ mark='<span style="color:#9fdcff">BIOS</span>'; tip=r+" — BIOS/sistema"; }
+    else if(v && v.playable){ mark='<span style="color:#6cff9e">✔</span>'; }
+    else if(v){ mark='<span style="color:#ffb45c">⚠</span>'; tip=r+" — "+(v.detail||v.status||"incompleto"); }
+    const sn=r.replace(/\.(zip|7z|chd)$/i,"");
+    return `<div class="row${state.sel===r?' sel':''}" data-rom="${r.replace(/"/g,'&quot;')}" title="${tip.replace(/"/g,'&quot;')}"><img class="rt" loading="lazy" alt="" src="${API}/api/image?rom=${encodeURIComponent(sn)}" onerror="this.style.visibility='hidden'"><span class="star">${fav?'★':''}</span><span class="arrow">▶</span><span class="n"><span class="t">${safe}</span><span class="fn">${r.replace(/</g,"&lt;")}</span></span><span style="margin-left:auto;font-size:12px">${mark}</span></div>`;
+  }).join("");
+  // Evita reconstruir a lista quando apenas a validação está consultando o backend.
+  // Recriar o innerHTML recarregava todas as imagens e causava o piscar.
+  if(state.renderMarkup!==markup){
+    $("games").innerHTML=markup;
+    state.renderMarkup=markup;
+  }else{
+    return;
+  }
+  document.querySelectorAll(".row").forEach(el=>{
+    el.onclick=()=>{
+      const rom=el.dataset.rom;
+      if(state.sel===rom) launch(rom); else select(rom);
+    };
+    el.ondblclick=()=>launch(el.dataset.rom);
+  });
+  document.querySelectorAll(".row .star").forEach(el=>{
+    el.onclick=(ev)=>{ ev.stopPropagation(); toggleFav(el.parentElement.dataset.rom); };
+    el.style.cursor="pointer";
+  });
+}
+
+function toggleFav(rom){
+  if(!rom)return;
+  if(state.favs.has(rom)) state.favs.delete(rom); else state.favs.add(rom);
+  localStorage.setItem("mga.favs",JSON.stringify([...state.favs]));
+  $("favsCount").textContent=state.favs.size;
+  renderGames();
+}
+
+function pushRecent(rom){
+  state.recent=[rom,...state.recent.filter(r=>r!==rom)].slice(0,15);
+  localStorage.setItem("mga.recent",JSON.stringify(state.recent));
+}
+
+function select(rom){
+  state.sel=rom;
+  const short=rom.replace(/\.(zip|7z|chd)$/i,"");
+  const nice=(state.titles && state.titles[short]) || short.toUpperCase();
+  $("curName").textContent=nice;
+  const th=document.querySelector(".gameinfo .thumb");
+  if(th){ th.innerHTML=`<img alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px" src="${API}/api/image?rom=${encodeURIComponent(short)}" onerror="this.parentElement.textContent='\u{1F3AE}'">`; }
+  $("curFile").textContent=rom;
+  const v=state.valid[short];
+  const pb=$("btnPlay");
+  if(pb){ pb.disabled = !!(v && v.kind==="bios"); pb.textContent = (v&&v.kind==="bios") ? "■ BIOS / SISTEMA" : "▶ JOGAR "+nice.slice(0,18); }
+  renderGames();
+}
+
+async function launch(rom){
+  if(menuMusic){menuMusic.pause();menuMusic.currentTime=0;}
+  if(!state.emulator){toast("Selecione um emulador",true);return}
+  const v=state.valid[rom.replace(/\.(zip|7z|chd)$/i,"")];
+  if(v&&v.kind==="bios"){toast("Este arquivo é BIOS/sistema, não um jogo",true);return}
+  toast("▶ Iniciando "+rom);
+  try{
+    const result=await api("/api/launch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({emulator:state.emulator,romName:rom,romsPath:state.config.romsDir})});
+    pushRecent(rom); renderGames();
+    toast(result.fallback?"✓ MAME iniciado em modo compatível: "+(result.rom||rom):"✓ MAME iniciado: "+(result.rom||rom));
+  }catch(e){toast("Erro ao abrir o MAME: "+e.message,true)}
+}
+
+// browser
+async function openBrowser(mode){browserMode=mode;$("browserTitle").textContent=mode==="exe"?"Selecione MAME.exe":"Selecione a pasta de ROMs";$("browser").classList.add("show");if($("folderInput")){$("folderInput").value=mode==="dir"?(state.config.romsDir||""):"";$("folderInput").style.display=mode==="dir"?"block":"none"}await listBrowser("")}
+async function listBrowser(p){
+  try{
+    const r=await api("/api/browse?path="+encodeURIComponent(p)+"&mode="+(browserMode==="exe"?"exe":"dir"));
+    browserPath=r.path||""; $("browserPath").textContent=browserPath||"Selecione um drive";
+    $("browserList").innerHTML=r.entries.map(e=>`<div class="mrow ${e.type==='exe'?'exe':''}" data-path="${e.path.replace(/"/g,'&quot;')}" data-type="${e.type}">${e.type==='exe'?'▶ ':e.type==='dir'?'📁 ':'💽 '}${e.name}<span>${e.type==='exe'?'EXE':e.type==='drive'?'DRIVE':''}</span></div>`).join("")||'<div style="padding:14px;color:#9fdcff;text-align:center">Vazio.</div>';
+    document.querySelectorAll("#browserList .mrow").forEach(row=>{
+      row.onclick=async()=>{
+        if(row.dataset.type==="exe"&&browserMode==="exe"){await saveMame(row.dataset.path)}
+        else{await listBrowser(row.dataset.path)}
+      }
+    });
+    $("browserUp").onclick=()=>{listBrowser(r.parent||"")};
+  }catch(e){toast(e.message,true)}
+}
+$("browserClose").onclick=()=>$("browser").classList.remove("show");
+$("useFolder").onclick=()=>{if(browserMode==="dir"){const typed=($("folderInput")?.value||"").trim();const chosen=typed||browserPath;if(chosen)saveRoms(chosen);else toast("Digite ou selecione uma pasta de ROMs",true)}};
+async function saveMame(p){try{await api("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mamePath:p})});toast("✓ MAME salvo");$("browser").classList.remove("show");await loadConfig()}catch(e){toast(e.message,true)}}
+async function saveRoms(p){try{const saved=await api("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({romsDir:p})});if(state.config.mamePath){try{await api("/api/set-rompath",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mamePath:state.config.mamePath,romsPath:saved.romsDir||p})})}catch(e){}}toast("✓ ROMs salvo. Escolha um jogo para abrir diretamente no MAME");$("browser").classList.remove("show");await loadConfig()}catch(e){toast(e.message,true)}}
+
+$("btnRoms").onclick=()=>openBrowser("dir");
+$("btnDownload").onclick=()=>{ if(currentRomSource()!=="drive"){toast("Modo local ativo: escolha a pasta das ROMs no botão acima",true);return;} openDownloadModal(); };
+$("btnDownloadNow").onclick=()=>{ if(currentRomSource()!=="drive"){toast("Modo local ativo: nenhum download será iniciado",true);return;} startRomDownload(""); };
+$("romSource").onchange=()=>{ romSource=$("romSource").value==="drive"?"drive":"local"; localStorage.setItem("mga.romSource",romSource); updateRomSourceUI(); toast(romSource==="drive"?"✓ Origem: Google Drive":"✓ Origem: pasta do PC"); if(romSource==="drive") ensureRomsAuto(state.config); };
+$("btnValidate").onclick=()=>revalidate();
+const CONTROL_UI_ACTIONS=[["P1_JOYSTICK_UP","P1 — CIMA"],["P1_JOYSTICK_DOWN","P1 — BAIXO"],["P1_JOYSTICK_LEFT","P1 — ESQUERDA"],["P1_JOYSTICK_RIGHT","P1 — DIREITA"],["P1_BUTTON1","P1 — SOCO FRACO"],["P1_BUTTON2","P1 — CHUTE FRACO"],["P1_BUTTON3","P1 — SOCO MÉDIO"],["P1_BUTTON4","P1 — CHUTE MÉDIO"],["P1_BUTTON5","P1 — SOCO FORTE"],["P1_BUTTON6","P1 — CHUTE FORTE"],["P1_BUTTON7","P1 — AUXILIAR 1"],["P1_BUTTON8","P1 — AUXILIAR 2"],["START1","P1 — START"],["COIN1","P1 — COIN"],["P2_JOYSTICK_UP","P2 — CIMA"],["P2_JOYSTICK_DOWN","P2 — BAIXO"],["P2_JOYSTICK_LEFT","P2 — ESQUERDA"],["P2_JOYSTICK_RIGHT","P2 — DIREITA"],["P2_BUTTON1","P2 — BOTÃO 1"],["P2_BUTTON2","P2 — BOTÃO 2"],["P2_BUTTON3","P2 — BOTÃO 3"],["P2_BUTTON4","P2 — BOTÃO 4"],["P2_BUTTON5","P2 — BOTÃO 5"],["P2_BUTTON6","P2 — BOTÃO 6"],["P2_BUTTON7","P2 — BOTÃO 7"],["P2_BUTTON8","P2 — BOTÃO 8"],["START2","P2 — START"],["COIN2","P2 — COIN"],["UI_CANCEL","MENU — VOLTAR"],["UI_SELECT","MENU — CONFIRMAR"]];
+let controlsProfile=null,controlCaptureAction="",controlVisualTimer=null,controlCaptureGeneration=0,controlsOpenGeneration=0,controlsPresetGeneration=0;
+function controlLabel(action){const raw=CONTROL_UI_ACTIONS.find(x=>x[0]===action)?.[1]||action;return raw.replace(/^P1 — /,"Jogador 1 · ").replace(/^P2 — /,"Jogador 2 · ").replace(/^MENU — /,"Menu · ")}
+function controlTokens(value){return String(value||"").toUpperCase().match(/JOYCODE_\d+_(?:BUTTON\d+|(?:R?[XYZ]AXIS|SLIDER\d)(?:_(?:UP|DOWN|LEFT|RIGHT|NEG|POS))?(?:_SWITCH)?|HAT\d(?:UP|DOWN|LEFT|RIGHT))/g)||[]}
+const MGA_TOKEN_RE=/^(?:KEYCODE_[A-Z0-9_]+|JOYCODE_\d+_(?:BUTTON\d+|HAT\d(?:UP|DOWN|LEFT|RIGHT)|(?:R?[XYZ]AXIS|SLIDER\d)(?:_(?:UP|DOWN|LEFT|RIGHT|NEG|POS))?(?:_SWITCH)?))$/;
+function sanitizeSeq(value){const seen=new Set();return String(value||"").toUpperCase().split(/\s+OR\s+/).map(x=>x.trim().split(/\s+/).filter(Boolean).join(" ")).filter(Boolean).filter(x=>x.split(" ").every(t=>MGA_TOKEN_RE.test(t))).filter(x=>seen.has(x)?false:(seen.add(x),true)).join(" OR ")}
+const MGA_AXIS_NAMES=["XAXIS","YAXIS","ZAXIS","RXAXIS","RYAXIS","RZAXIS"];
+function axisToken(joyIndex,axisIndex,positive){const name=MGA_AXIS_NAMES[axisIndex]||"XAXIS";const vertical=name==="YAXIS";const dir=vertical?(positive?"DOWN":"UP"):(positive?"RIGHT":"LEFT");return `JOYCODE_${joyIndex}_${name}_${dir}_SWITCH`}
+function padList(){try{return Array.from(navigator.getGamepads?navigator.getGamepads():[]).filter(Boolean)}catch{return[]}}
+function padKey(g){return g?`index:${Number.isFinite(Number(g.index))?Number(g.index):"na"}`:""}
+function joyIndexFor(player){const mapped=controlsProfile?.joycodeMap?.[String(player)];const match=String(mapped||"").match(/^JOYCODE_(\d+)$/);if(match)return Number(match[1]);const selected=controlsProfile?.padMap?.[String(player)];if(selected&&Number.isFinite(Number(selected.index)))return Number(selected.index)+1;return Math.max(1,Number(player)||1)}
+function padJoyCode(player){return `JOYCODE_${joyIndexFor(player)}`}
+function padForPlayer(player){const pads=padList();const selected=controlsProfile?.padMap?.[String(player)];if(selected){const exact=pads.find(g=>padKey(g)===String(selected.key||""));if(exact)return exact;const byIndex=pads.find(g=>String(g.index)===String(selected.index));if(byIndex)return byIndex}return pads[player-1]||pads[0]}
+function autoAssignPads(){if(!controlsProfile)return;const pads=padList();controlsProfile.padMap=controlsProfile.padMap||{};for(const player of [1,2]){const g=pads[player-1]||pads[0];if(g)controlsProfile.padMap[String(player)]={key:padKey(g),index:Number(g.index),id:String(g.id||""),mapping:String(g.mapping||"")}}controlsProfile.joycodeMap=controlsProfile.joycodeMap||{};for(const player of [1,2])if(!controlsProfile.joycodeMap[String(player)])controlsProfile.joycodeMap[String(player)]=`JOYCODE_${joyIndexFor(player)}`}
+function renderPadSelectors(){for(const player of [1,2]){const el=$("padDeviceP"+player);if(!el)continue;const singleDragonRise=controlsProfile?.kind==="dragonrise";el.disabled=singleDragonRise&&player===2;if(singleDragonRise&&player===2){controlsProfile.padMap=controlsProfile.padMap||{};delete controlsProfile.padMap["2"];el.innerHTML='<option value="">— não usado —</option>';continue}const current=controlsProfile?.padMap?.[String(player)]||{};el.innerHTML='<option value="">— automático —</option>'+padList().map((g,i)=>{const value=String(g.index);const label=`Controle encontrado ${i+1}`;const selected=(String(current.index)===value)?' selected':'';return `<option value="${value}"${selected}>${label}</option>`}).join("")}}
+function setSelectedPad(player,value){if(!controlsProfile)return;controlsProfile.padMap=controlsProfile.padMap||{};const g=padList().find(x=>String(x.index)===String(value));if(g)controlsProfile.padMap[String(player)]={key:padKey(g),index:Number(g.index),id:String(g.id||""),mapping:String(g.mapping||"")};else delete controlsProfile.padMap[String(player)];renderControlDevice();renderControlVisual()}
+function controlConflicts(){const byToken=new Map();for(const [action] of CONTROL_UI_ACTIONS){const value=controlsProfile?.bindings?.[action]||"";for(const token of controlTokens(value)){const actions=byToken.get(token)||[];if(!actions.includes(action))actions.push(action);byToken.set(token,actions)}}return [...byToken.entries()].filter(([,actions])=>actions.length>1)}
+function renderControlDiagnostics(){const el=$("controlDiagnostics");if(!el)return;const conflicts=controlConflicts();if(conflicts.length){el.style.color="#ff8ad8";el.textContent="⚠ Alguns botões estão repetidos: "+conflicts.slice(0,4).map(([,a])=>a.map(controlLabel).join(" / ")).join(" · ")}else{el.style.color="#6cff9e";el.textContent="✓ Nenhum botão repetido"}}
+function renderControlRows(){const el=$("controlRows");if(!el||!controlsProfile)return;el.innerHTML=CONTROL_UI_ACTIONS.map(([action,label])=>{const value=String(controlsProfile.bindings[action]||"").trim();const state=value?"✓ Configurado":"○ Ainda não configurado";return `<div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;border:1px solid rgba(0,229,255,.2);padding:7px;border-radius:6px"><div><b style="color:#cfefff;font-size:11px">${controlLabel(action)}</b><div style="color:${value?"#6cff9e":"#9fdcff"};font-size:10px;letter-spacing:.4px">${state}</div></div><button class="btn capture-control" data-action="${action}">CONFIGURAR</button></div>`}).join("");el.querySelectorAll(".capture-control").forEach(b=>b.onclick=()=>beginControlCapture(b.dataset.action));renderControlDiagnostics()}
+function renderControlDevice(){const gps=padList(),el=$("controlDeviceInfo");if(!el)return;if(!gps.length){el.textContent="Nenhum controle conectado";return}const player=Number($("controlsPlayer")?.value||1);const g=padForPlayer(player)||gps[0];el.textContent=`Controle do jogador ${player} · ${g.buttons?.length||0} botões · ${g.axes?.length||0} direções`}
+function renderControlVisual(){const el=$("controlVisual");if(!el)return;const g=padForPlayer(Number($("controlsPlayer")?.value||1));if(!g){el.innerHTML="";return}const buttons=(g.buttons||[]).map((b,i)=>`<span style="padding:3px 5px;border:1px solid ${b.pressed?"#6cff9e":"rgba(0,229,255,.25)"};color:${b.pressed?"#6cff9e":"#9fdcff"};border-radius:4px">B${i+1}:${b.pressed?"ON":"—"}</span>`).join("");el.innerHTML=buttons+`<span style="padding:3px 5px;color:#ffd54f">Eixos: ${(g.axes||[]).map(v=>Number(v).toFixed(2)).join("/")||"—"}</span>`}
+function startControlVisual(){clearInterval(controlVisualTimer);controlVisualTimer=setInterval(()=>{renderControlDevice();renderControlVisual()},120);renderControlDevice();renderControlVisual()}
+function stopControlVisual(){clearInterval(controlVisualTimer);controlVisualTimer=null}
+function restoreNewestControlsDraft(serverProfile){try{const raw=JSON.parse(localStorage.getItem("mga.controlProfile.draft")||"null");if(raw?.profile&&Number(raw.savedAt||0)>Number(serverProfile?.updatedAt||0))return raw.profile}catch{}return serverProfile}
+function isDragonRisePad(g){const id=String(g?.id||"").toLowerCase();return id.includes("0079")||id.includes("0006")||id.includes("dragonrise")||id.includes("generic usb joystick")} function updateControlPadInfo(){const gps=padList();const el=$("controlPadInfo");if(!el)return;const g=gps[0];el.textContent=g?"Controle conectado":"Conecte o controle";el.className="badge "+(g?"ok":"bad")}
+async function openControls(){const generation=++controlsOpenGeneration;const fallback={kind:"manual",name:"Configuração manual",padMap:{},deviceMap:{},joycodeMap:{},bindings:Object.fromEntries(CONTROL_UI_ACTIONS.map(([action])=>[action,""]))};controlsProfile=fallback;$("controlPreset").value="manual";renderControlRows();renderPadSelectors();updateControlPadInfo();$("controlsModal").classList.add("show");startControlVisual();try{const d=await api("/api/controls/profile");if(generation!==controlsOpenGeneration)return;const detected=padList()[0];const autoDragon=detected&&isDragonRisePad(detected);const detectedPreset=autoDragon?d.presets.find(x=>x.kind==="dragonrise"):null;controlsProfile=JSON.parse(JSON.stringify(restoreNewestControlsDraft(detectedPreset||d.profile)));controlsProfile.padMap=controlsProfile.padMap||{};controlsProfile.deviceMap=controlsProfile.deviceMap||{};controlsProfile.joycodeMap=controlsProfile.joycodeMap||{};$("controlPreset").value=autoDragon?"dragonrise":(controlsProfile.kind||"manual");renderControlRows();renderPadSelectors();renderControlDevice();renderControlVisual();}catch(e){toast("Painel aberto; servidor de controles ainda não respondeu. Você pode capturar e salvar quando ele estiver pronto.",true)}}
+const GUIDED_CAPTURE_BASE=["JOYSTICK_UP","JOYSTICK_DOWN","JOYSTICK_LEFT","JOYSTICK_RIGHT","BUTTON1","BUTTON2","BUTTON3","BUTTON4","BUTTON5","BUTTON6","START","COIN"];
+let guidedCaptureActive=false,guidedCaptureIndex=0;
+function guidedActionList(){const p=String($("controlsPlayer")?.value||"1");return GUIDED_CAPTURE_BASE.map((name)=>name.startsWith("BUTTON")?`P${p}_${name}`:name==="START"?`START${p}`:name==="COIN"?`COIN${p}`:`P${p}_${name}`)}
+function startGuidedCapture(){const actions=guidedActionList();guidedCaptureActive=true;guidedCaptureIndex=0;toast(`Configuração passo a passo do jogador ${$("controlsPlayer").value}: pressione ${controlLabel(actions[0])}`);beginControlCapture(actions[0])}
+function stopGuidedCapture(){guidedCaptureActive=false;guidedCaptureIndex=0;controlCaptureAction="";controlCaptureGeneration++}
+function advanceGuidedCapture(){if(!guidedCaptureActive)return;const actions=guidedActionList();guidedCaptureIndex++;if(guidedCaptureIndex>=actions.length){guidedCaptureActive=false;toast("✓ Captura guiada concluída; revise e salve no MAME");return}const next=actions[guidedCaptureIndex];toast(`Próximo: ${controlLabel(next)} — pressione o botão físico`);beginControlCapture(next)}
+function removeCapturedTokenFromOtherBindings(token,keepAction){if(!controlsProfile?.bindings||!token)return;for(const [action,value] of Object.entries(controlsProfile.bindings)){if(action===keepAction)continue;const kept=String(value||"").toUpperCase().split(/\s+OR\s+/).map(part=>part.trim().split(/\s+/).filter(Boolean).filter(t=>t!==token).join(" ")).filter(Boolean).join(" OR ");controlsProfile.bindings[action]=sanitizeSeq(kept)}}
+function setCaptured(action,token){if(!controlsProfile)return;const next=sanitizeSeq(token);if(!next)return;const conflicts=Object.entries(controlsProfile.bindings||{}).filter(([key,value])=>key!==action&&String(value||"").split(/\s+OR\s+/i).map(x=>x.trim()).includes(next)).map(([key])=>controlLabel(key));removeCapturedTokenFromOtherBindings(next,action);controlsProfile.bindings[action]=next;renderControlRows();autosaveControls("captura");$("controlCaptureHint").textContent="✓ "+controlLabel(action)+" configurado"+(conflicts.length?" — removido de: "+conflicts.join(", "):"");controlCaptureAction="";controlCaptureGeneration++;if(guidedCaptureActive)setTimeout(advanceGuidedCapture,120)}
+function beginControlCapture(action){const player=action.startsWith("P2_")||action==="START2"||action==="COIN2"?2:1;const generation=++controlCaptureGeneration;controlCaptureAction=action;$("controlCaptureHint").textContent="Solte todos os botões. Depois pressione somente o controle indicado…";const before=padForPlayer(player);if(!before){toast("Conecte o controle arcade antes de capturar",true);controlCaptureAction="";return}const targetKey=padKey(before),joyIndex=joyIndexFor(player);let previous=(before.buttons||[]).map(b=>!!b.pressed),previousAxes=[...(before.axes||[])],armed=false,neutralSince=0;const poll=()=>{if(generation!==controlCaptureGeneration||controlCaptureAction!==action)return;const g=padForPlayer(player);if(!g||padKey(g)!==targetKey){requestAnimationFrame(poll);return}const buttons=g.buttons||[],ax=g.axes||[];const neutral=buttons.every(b=>!b?.pressed&&Number(b?.value||0)<.15)&&ax.every(v=>Math.abs(Number(v)||0)<.35);if(!armed){if(neutral){if(!neutralSince)neutralSince=performance.now();if(performance.now()-neutralSince>180)armed=true}else neutralSince=0;previous=buttons.map(b=>!!b?.pressed);previousAxes=[...ax];requestAnimationFrame(poll);return}for(let i=0;i<buttons.length;i++)if(buttons[i]?.pressed&&!previous[i]){setCaptured(action,`JOYCODE_${joyIndex}_BUTTON${i+1}`);return}if(ax[0]<-.6&&previousAxes[0]>=-.6){setCaptured(action,axisToken(joyIndex,0,false));return}if(ax[0]>.6&&previousAxes[0]<=.6){setCaptured(action,axisToken(joyIndex,0,true));return}if(ax[1]<-.6&&previousAxes[1]>=-.6){setCaptured(action,axisToken(joyIndex,1,false));return}if(ax[1]>.6&&previousAxes[1]<=.6){setCaptured(action,axisToken(joyIndex,1,true));return}previous=buttons.map(b=>!!b?.pressed);previousAxes=[...ax];requestAnimationFrame(poll)};poll()}
+$("controlPreset").onchange=async()=>{const generation=++controlsPresetGeneration;const kind=$("controlPreset").value;if(kind==="manual")return;try{const d=await api("/api/controls/profile");if(generation!==controlsPresetGeneration)return;const p=d.presets.find(x=>x.kind===kind);const keepPad=controlsProfile?.padMap||{},keepDevice=controlsProfile?.deviceMap||{},keepJoy=controlsProfile?.joycodeMap||{};if(p){controlsProfile=JSON.parse(JSON.stringify(p));controlsProfile.padMap=keepPad;controlsProfile.deviceMap=keepDevice;controlsProfile.joycodeMap=keepJoy}renderPadSelectors();renderControlRows();autosaveControls("troca de perfil");toast("✓ Perfil selecionado; nada foi reiniciado")}catch(e){toast("Falha ao carregar perfil: "+e.message,true)}};$("controlsTest").onclick=()=>{startControlVisual();toast("▣ Teste ativo: pressione os botões e mova a direção; os estados aparecem acima")};$("controlsGuide").onclick=()=>{startGuidedCapture()};$("controlsHid").onclick=async()=>{try{const d=await api("/api/controls/hid");if(!d.available){toast("Não foi possível consultar os detalhes do USB",true);return}const rows=(d.devices||[]).filter(x=>Number(x.vendorId)===121||Number(x.productId)===6||/dragonrise|generic usb joystick/i.test(String(x.product||"")+" "+String(x.manufacturer||"")));const text=rows.length?rows.map(x=>String(x.vendorIdHex||"VID?")+":"+String(x.productIdHex||"PID?")+" "+String(x.product||x.manufacturer||"HID")).join(" | "):((d.devices||[]).length+" dispositivo(s) HID listado(s)");toast("✓ USB: "+rows.length+" controle(s) encontrado(s)")}catch(e){toast("Falha no diagnóstico HID: "+e.message,true)}};$("controlsDetect").onclick=()=>{const gps=padList();if(!gps.length){toast("Nenhum controle detectado. Pressione um botão no controle e tente de novo.",true);return}autoAssignPads();updateControlPadInfo();renderControlDevice();renderControlVisual();toast(`✓ ${gps.length} controle(s) encontrado(s) e configurado(s) automaticamente`)};for(const player of [1,2]){const el=$("padDeviceP"+player);if(el)el.onchange=()=>{if(!controlsProfile)return;controlsProfile.padMap=controlsProfile.padMap||{};const g=padList().find(x=>String(x.index)===String(el.value));if(g)controlsProfile.padMap[String(player)]={key:padKey(g),index:Number(g.index),id:String(g.id||""),mapping:String(g.mapping||"")};else delete controlsProfile.padMap[String(player)];renderControlRows();renderControlDevice();autosaveControls("seleção de controle");toast(`Controle do jogador ${player}: ${el.value?"selecionado":"nenhum"}`)}};window.addEventListener("gamepadconnected",()=>{renderPadSelectors();updateControlPadInfo()});window.addEventListener("gamepaddisconnected",()=>{renderPadSelectors();updateControlPadInfo()});
+$("controlsPlayer").onchange=()=>{renderControlDevice();renderControlVisual()};
+let controlsAutosaveTimer=null;
+function controlsDraft(){return controlsProfile?JSON.parse(JSON.stringify(controlsProfile)):null}
+function storeControlsDraft(){const draft=controlsDraft();if(!draft)return;localStorage.setItem("mga.controlProfile.draft",JSON.stringify({savedAt:Date.now(),profile:draft}))}
+function sendControlsDraftBeacon(){const draft=controlsDraft();if(!draft)return;storeControlsDraft();try{const emu=state.emulators?.find(e=>e.id===state.emulator)||state.emulators?.[0];const body=JSON.stringify({mamePath:emu?.path||state.config?.mamePath||"",profile:draft});navigator.sendBeacon("/api/controls/profile",new Blob([body],{type:"application/json"}))}catch{} }
+async function autosaveControls(reason="alteração"){const draft=controlsDraft();if(!draft)return;storeControlsDraft();clearTimeout(controlsAutosaveTimer);controlsAutosaveTimer=setTimeout(async()=>{try{const emu=state.emulators?.find(e=>e.id===state.emulator)||state.emulators?.[0];const r=await api("/api/controls/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mamePath:emu?.path||state.config?.mamePath||"",profile:draft})});if(r?.profile)localStorage.setItem("mga.controlProfile.draft",JSON.stringify({savedAt:Number(r.profile.updatedAt||Date.now()),profile:r.profile}));}catch{}},180)}
+window.__mgaPersistControls=sendControlsDraftBeacon;window.addEventListener("pagehide",sendControlsDraftBeacon);window.addEventListener("beforeunload",sendControlsDraftBeacon);
+$("controlsBackup").onclick=()=>{if(!controlsProfile)return;storeControlsDraft();localStorage.setItem("mga.controlProfile.last",JSON.stringify(controlsProfile));const blob=new Blob([JSON.stringify(controlsProfile,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="master-games-arcade-controles.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast("✓ Perfil exportado e salvo localmente")};
+$("controlsRestore").onclick=()=>$("controlsRestoreFile").click();
+$("controlsRestoreFile").onchange=async(e)=>{const f=e.target.files?.[0];if(!f)return;try{const p=JSON.parse(await f.text());if(!p.bindings)throw new Error("Perfil sem bindings");controlsProfile=p;$("controlPreset").value="manual";renderControlRows();autosaveControls("importação de perfil");toast("✓ Perfil importado e salvo automaticamente; confira os conflitos antes de iniciar")}catch(err){toast("Perfil inválido: "+err.message,true)}e.target.value=""};
+$("controlsReset").onclick=async()=>{try{const d=await api("/api/controls/profile");const p=d.presets.find(x=>x.kind==="dragonrise")||d.profile;const keepPad=controlsProfile?.padMap||{},keepDevice=controlsProfile?.deviceMap||{},keepJoy=controlsProfile?.joycodeMap||{};controlsProfile=JSON.parse(JSON.stringify(p));controlsProfile.padMap=keepPad;controlsProfile.deviceMap=keepDevice;controlsProfile.joycodeMap=keepJoy;$("controlPreset").value=controlsProfile.kind||"dragonrise";renderPadSelectors();renderControlRows();autosaveControls("restauração do padrão");toast("↺ Padrão DragonRise restaurado e salvo automaticamente")}catch(e){toast(e.message,true)}};
+$("btnControls").onclick=(event)=>{event?.preventDefault();if($("controlsModal").classList.contains("show"))return;$("configModal").classList.remove("show");setTimeout(()=>openControls(),80)};$("controlsClose").onclick=()=>{sendControlsDraftBeacon();$("controlsModal").classList.remove("show");stopGuidedCapture();stopControlVisual()};
+$("controlsSave").onclick=async()=>{try{const emu=state.emulators?.find(e=>e.id===state.emulator)||state.emulators?.[0];storeControlsDraft();localStorage.setItem("mga.controlProfile.last",JSON.stringify(controlsProfile));const r=await api("/api/controls/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mamePath:emu?.path||state.config.mamePath||"",profile:controlsProfile})});toast(r.applied?"✓ Controles salvos no MAME para todos os jogos":"✓ Perfil salvo; será aplicado quando o MAME for encontrado");$("controlsModal").classList.remove("show");stopControlVisual()}catch(e){toast(e.message,true)}};
+
+// ============ SOBRE (ficha completa do sistema) ============
+const esc=(s)=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+function aboutSection(t,rows){
+  return `<div style="margin:10px 0 4px;color:#00e5ff;font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:1px">${t}</div>`+
+    `<table style="width:100%;border-collapse:collapse">${rows.map(([k,v])=>`<tr><td style="padding:3px 8px 3px 0;color:#9fdcff;white-space:nowrap;vertical-align:top">${esc(k)}</td><td style="padding:3px 0;word-break:break-word">${v}</td></tr>`).join("")}</table>`;
+}
+async function openAbout(){
+  $("aboutModal").classList.add("show");
+  const el=$("aboutBody"); el.innerHTML="Carregando…";
+  try{
+    const a=await api("/api/about");
+    el.innerHTML=
+      `<div style="color:#ffd54f;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1px">${esc(a.nome)} · v${esc(a.versao)}</div>`+
+      `<div style="margin:6px 0 2px">${esc(a.descricao)}</div>`+
+      aboutSection("IDENTIFICAÇÃO",[
+        ["Sistema",esc(a.nome)+" — "+esc(a.subtitulo)],
+        ["Do que se trata","Launcher de arcade que instala, configura e roda jogos no MAME automaticamente"],
+        ["Desenvolvedor","<b>"+esc(a.desenvolvedor)+"</b>"],
+        ["Ano de criação",esc(a.anoCriacao)],
+        ["Versão",esc(a.versao)],
+        ["Direitos",esc(a.copyright)],
+        ["Plataforma",esc(a.plataforma)],
+      ])+
+      aboutSection("LINGUAGENS E TECNOLOGIAS",[["Stack","<ul style='margin:0;padding-left:16px'>"+(a.linguagens||[]).map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul>"]])+
+      aboutSection("EMULADOR (MAME)",[
+        ["Versão",esc(a.mame.versao)],
+        ["Executável",esc(a.mame.executavel)],
+        ["Instalado",a.mame.instalado?"<span style='color:#6cff9e'>SIM</span>":"<span style='color:#ffb45c'>baixando…</span>"],
+        ["Pasta do MAME",esc(a.mame.pasta)],
+        ["Origem",esc(a.mame.origem)],
+      ])+
+      aboutSection("ROMs (JOGOS)",[
+        ["Total no catálogo",esc(a.roms.totalCatalogo)+" ROMs"],
+        ["Instaladas no PC",esc(a.roms.instaladas)+" arquivos"],
+        ["Pasta de download",esc(a.roms.pastaDownload)],
+        ["De onde vêm",esc(a.roms.origem)],
+        ["Links",(a.roms.links||[]).map(l=>esc(l)).join("<br>")],
+      ])+
+      aboutSection("IMAGENS DOS JOGOS",[
+        ["Baixadas",esc(a.imagens.total)+" imagens"],
+        ["Pasta",esc(a.imagens.pasta)],
+        ["Origem",esc(a.imagens.origem)],
+      ])+
+      aboutSection("PASTAS DO SISTEMA",[
+        ["Instalação",esc(a.pastas.instalacao)],
+        ["Dados",esc(a.pastas.dados)],
+        ["Config",esc(a.pastas.config)],
+        ["Log de execuções",esc(a.pastas.log)],
+      ])+
+      aboutSection("RECURSOS",[["Inclui","<ul style='margin:0;padding-left:16px'>"+(a.recursos||[]).map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul>"]])+
+      aboutSection("EXECUÇÃO DO MAME",[
+        ["Perfil","Configuração básica compatível com MAMEPlus 0.168.2"],
+        ["Vídeo/áudio","Padrões do próprio MAMEPlus"],
+        ["Controles","Teclado e joystick básico"],
+      ]);
+  }catch(e){ el.innerHTML="<span style='color:#ff8ad8'>"+esc(e.message)+"</span>"; }
+}
+$("btnAbout").onclick=openAbout;
+$("btnHelp").onclick=()=>$('helpModal').classList.add("show");
+$("helpClose").onclick=()=>$("helpModal").classList.remove("show");
+$("aboutClose").onclick=()=>$('aboutModal').classList.remove("show");
+$("btnConfig").onclick=()=>{ updateRomSourceUI(); $("configModal").classList.add("show"); };
+$("configClose").onclick=()=>$("configModal").classList.remove("show");
+["btnRoms","btnDownload","btnDownloadNow","btnValidate","btnImages"].forEach(id=>$(id)?.addEventListener("click",()=>setTimeout(()=>$("configModal").classList.remove("show"),120)));
+
+// ============ IMAGENS DOS JOGOS ============
+$("btnImages").onclick=async()=>{
+  try{
+    const s=await api("/api/images/download-all",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+    toast(s.running&&!s.started?"Já baixando imagens…":"🖼 Baixando imagens dos jogos…");
+    clearInterval($("btnImages")._t);
+    $("btnImages")._t=setInterval(async()=>{
+      try{
+        const st=await api("/api/images/status");
+        if(st.running){ $("btnImages").textContent="🖼 "+st.done+"/"+st.total; }
+        else{ clearInterval($("btnImages")._t); $("btnImages").textContent="🖼 IMAGENS"; toast("✓ "+st.ok+" imagens prontas"); renderGames(); if(state.sel) select(state.sel); }
+      }catch{}
+    },1500);
+  }catch(e){ toast(e.message,true) }
+};
+
+// ============ CONTROLE USB (Gamepad API) ============
+// Reconhece qualquer controle USB conectado (XInput/DirectInput) e permite
+// navegar e iniciar jogos sem teclado. Também aplica o mapeamento no MAME.
+const pad={index:null,last:{},repeat:0,configured:false};
+function padList(){ try{ return [...(navigator.getGamepads?navigator.getGamepads():[])].filter(Boolean) }catch{ return [] } }
+function padUiUpdate(){
+  const gps=padList();
+  const st=$("padStatus"), nm=$("padName");
+  if(!st) return;
+  if(gps.length){
+    st.textContent="OK x"+gps.length; st.className="badge ok";
+    const names=gps.map((g,i)=>`${i+1}: ${(g.id||"USB HID").slice(0,28)}`);
+    if(nm){ nm.textContent=names.join(" · ").slice(0,120); nm.title=names.join("\n"); }
+  }else{
+    st.textContent="—"; st.className="badge bad"; if(nm){ nm.textContent="conecte via USB"; nm.title="Nenhum gamepad exposto pelo Windows"; }
+  }
+}
+async function padConfigureMame(){
+  if(pad.configured) return;
+  const emu=state.emulators?.find(e=>e.id===state.emulator)||state.emulators?.[0];
+  if(!emu) return;
+  pad.configured=true;
+  try{ await api("/api/reset-controls",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mamePath:emu.path})}); }catch{ pad.configured=false; }
+}
+window.addEventListener("gamepadconnected",(e)=>{
+  padUiUpdate();
+  toast("🎮 Controle reconhecido: "+((e.gamepad&&e.gamepad.id)||"USB"));
+  padConfigureMame();
+});
+window.addEventListener("gamepaddisconnected",()=>{ padUiUpdate(); toast("Controle desconectado",true); });
+
+function padMove(step){
+  const rows=[...document.querySelectorAll(".row")];
+  if(!rows.length) return;
+  const idx=rows.findIndex(r=>r.dataset.rom===state.sel);
+  const n=rows[Math.max(0,Math.min(rows.length-1,(idx<0?0:idx+step)))];
+  if(n){ select(n.dataset.rom); n.scrollIntoView({block:"nearest"}); }
+}
+function padPoll(){
+  const modalOpen=[...document.querySelectorAll(".modal.show")].length>0;
+  if(modalOpen||controlCaptureAction||guidedCaptureActive){pad.last={};requestAnimationFrame(padPoll);return}
+  const gps=padList();
+  if(!gps.length){requestAnimationFrame(padPoll);return}
+  const g=gps[0];
+  const now=performance.now();
+  const ax=g.axes||[],bt=g.buttons||[];
+  const down=(i)=>!!(bt[i]&&(bt[i].pressed||bt[i].value>0.5));
+  const up=down(12)||(ax[1]||0)<-.5,dn=down(13)||(ax[1]||0)>.5,lf=down(14)||(ax[0]||0)<-.5,rt=down(15)||(ax[0]||0)>.5;
+  const hold=(key,active,fn)=>{if(!active){pad.last[key]=0;return}if(now-(pad.last[key]||0)<(pad.last[key]?140:0))return;pad.last[key]=now;fn()};
+  hold("up",up,()=>padMove(-1));hold("down",dn,()=>padMove(1));hold("left",lf,()=>padMove(-10));hold("right",rt,()=>padMove(10));
+  const press=(key,active,fn)=>{if(active&&!pad.last["b"+key]){pad.last["b"+key]=1;fn()}else if(!active)pad.last["b"+key]=0};
+  press(0,down(0),()=>{if(state.sel)launch(state.sel)});press(9,down(9),()=>{if(state.sel)launch(state.sel)});press(3,down(3),()=>{if(state.sel)toggleFav(state.sel)});press(1,down(1),()=>{const q=$("search");if(q&&q.value){q.value="";state.filter="";renderGames()}});
+  press(4,down(4),()=>{const c=[...document.querySelectorAll("#chips .chip")],i=c.findIndex(x=>x.dataset.mode===state.mode);(c[(i-1+c.length)%c.length]||c[0]).click()});
+  press(5,down(5),()=>{const c=[...document.querySelectorAll("#chips .chip")],i=c.findIndex(x=>x.dataset.mode===state.mode);(c[(i+1)%c.length]||c[0]).click()});
+  requestAnimationFrame(padPoll)
+}
+padUiUpdate();
+setInterval(()=>{ padUiUpdate(); if(padList().length) padConfigureMame(); }, 2000);
+requestAnimationFrame(padPoll);
+// ====================================================
+
+// ============ ROM DOWNLOADER (Google Drive) ============
+let dlPollTimer=null;
+let dlAutoStarted=false;
+let dlModalClosed=false;
+async function openDownloadModal(){
+  dlModalClosed=false;
+  $("dlModal").classList.add("show");
+  try{
+    const m=await api("/api/roms/manifest");
+    const c=await api("/api/config").catch(()=>state.config||{});
+    state.config=c;
+    $("dlInfo").textContent=`${m.count} ROMs disponíveis. Destino automático: ${c.romsDir||"pasta roms dentro da instalação"}`;
+  }catch(e){ $("dlInfo").textContent="Erro: "+e.message; }
+  if(!dlModalClosed)pollDl();
+}
+$("dlClose").onclick=()=>{ dlModalClosed=true; $("dlModal").classList.remove("show"); if(dlPollTimer){clearInterval(dlPollTimer);dlPollTimer=null;} };
+// O download interno foi substituído pelo download da pasta completa no navegador.
+async function pollDl(){
+  if(dlPollTimer) clearInterval(dlPollTimer);
+  const tick=async()=>{
+    if(dlModalClosed){ if(dlPollTimer){clearInterval(dlPollTimer);dlPollTimer=null;} return; }
+    try{
+      const s=await api("/api/roms/status");
+      const pct=s.total?Math.round((s.done/s.total)*100):0;
+      $("dlProgBar").style.width=pct+"%";
+      const cur=s.current?`${s.current} ${s.currentTotal?Math.round(s.currentBytes/1024)+" / "+Math.round(s.currentTotal/1024)+" KB":""}`:"";
+      $("dlCurrent").textContent = s.running ? `[${s.done}/${s.total}]  ${cur}` : (s.finishedAt?`✓ CONCLUÍDO: ${s.ok} baixadas, ${s.skipped} já existiam, ${s.errors.length} erros`:"—");
+      if(s.errors&&s.errors.length){
+        $("dlLog").innerHTML = s.errors.slice(-20).map(e=>`<div style="color:#ff8ad8">✗ ${e.file}: ${e.error}</div>`).join("");
+      }
+      if(!s.running){
+        clearInterval(dlPollTimer); dlPollTimer=null; if($("dlStart")) $("dlStart").disabled=false;
+        if(s.finishedAt){
+          // Recarrega diretamente o destino usado pelo download; isso evita que a lista permaneça vazia por causa de configuração antiga.
+          state.valid={};
+          await loadTitles();
+          if(s.target){ await loadRoms(s.target); }
+          else { await loadConfig(); }
+          await loadValidationOnce();
+        }
+      }
+    }catch(e){}
+  };
+  await tick();
+  dlPollTimer=setInterval(tick, 800);
+}
+
+// O usuário escolhe entre abrir o link no navegador ou apontar para a pasta já baixada.
+if ($("dlChooseFolder")) {
+  $("dlChooseFolder").onclick = () => {
+    $("dlModal").classList.remove("show");
+    openBrowser("dir");
+  };
+}
+
+// Baixa automaticamente o MAMEPlus 0.168.2 quando ele não está instalado.
+let emuAutoStarted=false;
+let emuReadyNotified=false;
+async function ensureEmulators(){
+  try{
+    const s=await api("/api/emulators/status").catch(()=>null);
+    if(!s) return;
+    if(s.running){
+      emuAutoStarted=true;
+      toast("Baixando MAMEPlus 0.168.2...");
+      return;
+    }
+    if(s.missing){
+      if(!emuAutoStarted){
+        emuAutoStarted=true;
+        toast("Baixando MAMEPlus 0.168.2...");
+        await api("/api/emulators/download-all",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+      }
+      return;
+    }
+    // O download terminou: recarrega o seletor e libera o botão de jogar.
+    if(emuAutoStarted && !emuReadyNotified){
+      await loadEmulators();
+      emuReadyNotified=true;
+      toast("✓ MAMEPlus 0.168.2 pronto para jogar");
+    }
+  }catch{}
+}
+setInterval(ensureEmulators, 2500);
+ensureEmulators();
+// =========================================================
+
+$("search").oninput=(e)=>{state.filter=e.target.value;renderGames()};
+$("search").onkeydown=(e)=>{ if(e.key==="Escape"){ e.target.value=""; state.filter=""; e.target.blur(); renderGames(); } };
+document.querySelectorAll("#chips .chip").forEach(c=>{
+  c.onclick=()=>{ state.mode=c.dataset.mode; localStorage.setItem("mga.mode",state.mode); renderGames(); };
+});
+
+// keyboard nav
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape" && !$("helpModal")?.classList.contains("show") && !$("aboutModal")?.classList.contains("show")){ return; }
+  if(e.target.tagName==="INPUT")return;
+  if(e.key==="/"){e.preventDefault();$("search").focus();return}
+  const rows=[...document.querySelectorAll(".row")];
+  if(!rows.length)return;
+  const idx=rows.findIndex(r=>r.dataset.rom===state.sel);
+  const go=(i)=>{const n=rows[Math.max(0,Math.min(rows.length-1,i))];n&&(select(n.dataset.rom),n.scrollIntoView({block:"nearest"}))};
+  if(e.key==="ArrowDown"){e.preventDefault();const n=rows[Math.min(rows.length-1,(idx<0?0:idx+1))];n&&(select(n.dataset.rom),n.scrollIntoView({block:"nearest"}))}
+  else if(e.key==="ArrowUp"){e.preventDefault();const n=rows[Math.max(0,(idx<0?0:idx-1))];n&&(select(n.dataset.rom),n.scrollIntoView({block:"nearest"}))}
+  else if(e.key==="PageDown"){e.preventDefault();go((idx<0?0:idx)+10)}
+  else if(e.key==="PageUp"){e.preventDefault();go((idx<0?0:idx)-10)}
+  else if(e.key==="Home"){e.preventDefault();go(0)}
+  else if(e.key==="End"){e.preventDefault();go(rows.length-1)}
+  else if(e.key==="Enter"&&state.sel){launch(state.sel)}
+  else if(e.key.toLowerCase()==="f"&&state.sel){toggleFav(state.sel)}
+});
+
+setupWindowControls();
+setupBackgroundSlideshow();
+setupResizer();
+setupPanelControls();
+$("btnPlay").onclick=()=>{ if(state.sel) launch(state.sel); };
+const tickClock=()=>{ const d=new Date(); $("clock").textContent=d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); };
+tickClock(); setInterval(tickClock,20000);
+loadConfig();
+</script>
+</body>
+</html>
