@@ -383,11 +383,11 @@
 
 
 ## Atualização solicitada: validação MAME 0.168 e pacote Windows
-- [ ] Confirmar no código-fonte do MAME 0.168 se `mapdevice` existe e é aceito.
-- [ ] Remover a geração de `mapdevice` se a diretiva não existir na versão 0.168.
-- [ ] Estender a captura para eixos adicionais e HATs.
-- [ ] Executar `node --check` e `tests/control-mapping.test.mjs` após as alterações.
-- [ ] Gerar pacote Windows com `@electron/packager --platform=win32`.
-- [ ] Criar ZIP completo em `/mnt/documents` e validar seu conteúdo.
-- [ ] Atualizar o Release do GitHub com o EXE e ZIP finais.
-- [ ] Aplicar a pesquisa atual: eliminar `mapdevice` do fluxo MAME 0.168.2, normalizar eixos/HAT e validar perfis DragonRise sem conflitos.
+- [x] Confirmar no código-fonte do MAME 0.168 se `mapdevice` existe e é aceito.
+- [x] Remover a geração de `mapdevice` se a diretiva não existir na versão 0.168.
+- [x] Estender a captura para eixos adicionais e HATs.
+- [x] Executar `node --check` e `tests/control-mapping.test.mjs` após as alterações.
+- [x] Gerar pacote Windows com `@electron/packager --platform=win32`.
+- [x] Criar ZIP completo e validar seu conteúdo. O mount `/mnt/documents` estava indisponível para escrita nesta sessão; o arquivo foi criado em `/home/ubuntu/final-mga-artifacts` e anexado ao Release.
+- [x] Atualizar o Release do GitHub com o EXE e ZIP finais.
+- [x] Aplicar a pesquisa atual: eliminar `mapdevice` do fluxo MAME 0.168.2, normalizar eixos/HAT e validar perfis DragonRise sem conflitos.
