@@ -59,7 +59,12 @@ assert.match(launcher, /function joyIndexFor\(player\)/);
 assert.match(launcher, /controlCaptureGeneration/);
 assert.match(launcher, /function autoAssignPads\(\)/);
 assert.match(launcher, /controlsProfile\.padMap/);
-assert.match(server, /mapdevice device=/);
-assert.match(server, /Object\.values\(profile\.deviceMap/);
+assert.doesNotMatch(server, /<mapdevice\s+device=/);
+assert.match(server, /mapdeviceWritten = 0/);
+assert.match(server, /mapdeviceSkipped/);
+assert.match(server, /MAMEPlus 0\.168\.2/);
 
-console.log('PASS control-mapping: identical pads, shared encoder, P2_BUTTON3, HAT validation, generation guard and CFG mapdevice');
+assert.match(launcher, /function axisToken\(joyIndex,axisIndex,positive\)/);
+assert.match(launcher, /function hatToken\(joyIndex,direction\)/);
+assert.match(launcher, /for\(let i=0;i<Math\.min\(ax\.length,8\);i\+\+\)/);
+console.log('PASS control-mapping: pads, P2_BUTTON3, HAT/eixos ampliados, geração sem mapdevice e guarda de captura');

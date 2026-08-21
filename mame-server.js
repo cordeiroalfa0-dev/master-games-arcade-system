@@ -1000,26 +1000,17 @@ function writeDefaultControls(mameDir, profile = readControlProfile()) {
   if (!fs.existsSync(cfgDir)) fs.mkdirSync(cfgDir, { recursive: true });
   const map = CONTROL_ACTIONS.map((action) => [action, profile.bindings[action]]);
   const xmlEscape = (value) => String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const mapEntries = [];
-  const seenDevices = new Set();
-  const seenControllers = new Set();
-  const mapCandidates = Object.values(profile.deviceMap || {});
-  for (const value of Object.values(profile.deviceMap || {})) {
-    const id = typeof value === "string" ? value : value?.mameId || value?.id || "";
-    const controller = typeof value === "object" ? value?.controller || "" : "";
-    const genericVidPid = /^(?:HID#)?VID_[0-9A-F]+&PID_[0-9A-F]+$/i.test(id);
-    const hasStableIdentity = /^XInput Player \d+$/i.test(id) || /[#]|instance_|product_/i.test(id);
-    if (!id || !/^JOYCODE_\d+$/.test(controller) || genericVidPid || !hasStableIdentity || seenDevices.has(id) || seenControllers.has(controller)) continue;
-    seenDevices.add(id);
-    seenControllers.add(controller);
-    mapEntries.push(`            <mapdevice device="${xmlEscape(id)}" controller="${controller}" />`);
-  }
+  // MAMEPlus 0.168.2 não possui o parser de <mapdevice> no código histórico.
+  // A numeração JOYCODE vem da ordem enumerada pelo provider; não emitir XML
+  // de versões recentes evita configuração ignorada ou inválida nessa build.
+  const mapdeviceWritten = 0;
+  const mapdeviceSkipped = Object.keys(profile.deviceMap || {}).length;
   const ports = map.map(([t, k]) => `            <port type="${t}"><newseq type="standard">${xmlEscape(k)}</newseq></port>`).join("\n");
   const xml = `<?xml version="1.0"?>
 <mameconfig version="10">
     <system name="default">
         <input>
-${mapEntries.join("\n")}${mapEntries.length ? "\n" : ""}${ports}
+${ports}
         </input>
     </system>
 </mameconfig>
@@ -1044,7 +1035,7 @@ ${mapEntries.join("\n")}${mapEntries.length ? "\n" : ""}${ports}
     writeMameIniKey(mameDir, "ctrlrpath", ctrlrDir);
     writeMameIniKey(mameDir, "ctrlr", "master-games-arcade");
   } catch {}
-  return { cfgDir, defaultCfgPath, ctrlrDir, ctrlrPath, profile: "master-games-arcade", mappings: map.length, mapdeviceWritten: mapEntries.length, mapdeviceSkipped: mapCandidates.length - mapEntries.length, backups };
+  return { cfgDir, defaultCfgPath, ctrlrDir, ctrlrPath, profile: "master-games-arcade", mappings: map.length, mapdeviceWritten, mapdeviceSkipped, backups };
 }
 
 // Liga o suporte a controles USB no mame.ini (DirectInput + XInput via winhybrid).
