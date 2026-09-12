@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Master Games Arcade - Player</title>
+  <style>
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#000; }
+    #game { width:100vw; height:100vh; min-width:100%; min-height:100%; background:#000; }
+    #status { position:fixed; inset:0; z-index:99999; display:grid; place-items:center; background:#000; color:#00e5ff; font:700 16px monospace; text-align:center; padding:24px; box-sizing:border-box; white-space:pre-wrap; }
+    #debug { position:fixed; left:10px; right:10px; bottom:10px; z-index:100000; max-height:42vh; overflow:auto; display:none; background:rgba(0,0,0,.88); border:1px solid #00e5ff; color:#00e5ff; padding:10px; box-sizing:border-box; font:12px/1.35 monospace; white-space:pre-wrap; pointer-events:none; }
+  </style>
+</head>
+<body>
+    <div id="game"></div>
+  <div id="status">BAIXANDO ROM...</div>
+  <pre id="debug"></pre>
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const romUrl = params.get("rom");
+      const parentUrl = params.get("parent") || "";
+      const gameName = params.get("name") || "Master Games Arcade";
+      const cleanName = gameName.replace(/\.(zip|7z|chd)$/i, "");
+      const status = document.getElementById("status");
+      const debug = document.getElementById("debug");
+
+      const diagnostic = [];
+      const log = (text) => {
+        const line = `[${new Date().toLocaleTimeString()}] ${text}`;
+        diagnostic.push(line);
+        if (diagnostic.length > 80) diagnostic.shift();
+        debug.textContent = diagnostic.join("\n");
+        console.log("[MGA]", text);
+      };
+
+      const fail = (text) => {
+        status.textContent = text;
+        status.style.color = "#ff2bd6";
+        debug.style.display = "block";
+        log(`ERRO: ${text}`);
+      };
+
+      const u16 = (a, o) => a[o] | (a[o + 1] << 8);
+      const u32 = (a, o) => (a[o] | (a[o + 1] << 8) | (a[o + 2] << 16) | (a[o + 3] << 24)) >>> 0;
+      const put16 = (a, o, v) => { a[o] = v & 255; a[o + 1] = v >>> 8; };
+      const put32 = (a, o, v) => { a[o] = v & 255; a[o + 1] = v >>> 8; a[o + 2] = v >>> 16; a[o + 3] = v >>> 24; };
+      const crc32 = (a) => { let c = ~0; for (const b of a) { c ^= b; for (let i = 0; i < 8; i++) c = (c >>> 1) ^ ((c & 1) ? 0xedb88320 : 0); } return (~c) >>> 0; };
+      async function zipEntries(bytes) {
+        let eocd = -1; for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) if (u32(bytes, i) === 0x06054b50) { eocd = i; break; }
+        if (eocd < 0) throw Error("ZIP sem diretório central");
+        const count = u16(bytes, eocd + 10), cdOffset = u32(bytes, eocd + 16); let o = cdOffset; const out = [];
+        for (let i = 0; i < count; i++) { if (u32(bytes, o) !== 0x02014b50) throw Error("ZIP inválido"); const method = u16(bytes, o + 10), size = u32(bytes, o + 24), csize = u32(bytes, o + 20), nl = u16(bytes, o + 28), xl = u16(bytes, o + 30), cl = u16(bytes, o + 32), name = new TextDecoder().decode(bytes.slice(o + 46, o + 46 + nl)), local = u32(bytes, o + 42), ln = u16(bytes, local + 26), lx = u16(bytes, local + 28), raw = bytes.slice(local + 30 + ln, local + 30 + ln + csize); let data = raw; if (method === 8) data = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer()); if (method !== 0 && method !== 8 || data.length !== size) throw Error(`Arquivo ZIP inválido: ${name}`); out.push({ name, data }); o += 46 + nl + xl + cl; }
+        return out;
+      }
+      async function combinedZip(game, bios) {
+        const files = [...await zipEntries(game), ...(await zipEntries(bios)).map((x) => ({ ...x, name: x.name.toLowerCase() === "asia-s3.rom" ? "sp-s3.sp1" : x.name }))]; const locals = [], central = []; let offset = 0;
+        for (const file of files) { const name = new TextEncoder().encode(file.name), h = new Uint8Array(30 + name.length + file.data.length), crc = crc32(file.data); put32(h, 0, 0x04034b50); put16(h, 4, 20); put32(h, 14, crc); put32(h, 18, file.data.length); put32(h, 22, file.data.length); put16(h, 26, name.length); h.set(name, 30); h.set(file.data, 30 + name.length); locals.push(h); central.push({ name, crc, size: file.data.length, offset }); offset += h.length; }
+        const dirs = central.map((x) => { const h = new Uint8Array(46 + x.name.length); put32(h, 0, 0x02014b50); put16(h, 4, 20); put16(h, 6, 20); put32(h, 16, x.crc); put32(h, 20, x.size); put32(h, 24, x.size); put16(h, 28, x.name.length); put32(h, 42, x.offset); h.set(x.name, 46); return h; }), cdSize = dirs.reduce((n, x) => n + x.length, 0), end = new Uint8Array(22); put32(end, 0, 0x06054b50); put16(end, 8, central.length); put16(end, 10, central.length); put32(end, 12, cdSize); put32(end, 16, offset); return new Uint8Array(await new Blob([...locals, ...dirs, end]).arrayBuffer());
+      }
+
+      window.addEventListener("error", (event) => {
+        log(`window.error: ${event.message || "erro desconhecido"}`);
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        log(`unhandledrejection: ${event.reason?.message || String(event.reason)}`);
+      });
+
+      if (!romUrl) {
+        fail("ROM NÃO INFORMADA");
+        return;
+      }
+
+      const absoluteRomUrl = new URL(romUrl, location.origin).href;
+      log(`Jogo: ${cleanName}`);
+      log(`ROM: ${absoluteRomUrl}`);
+
+      (async () => {
+        try {
+          status.textContent = `BAIXANDO ${gameName}...`;
+
+          const response = await fetch(absoluteRomUrl, {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin"
+          });
+
+          if (!response.ok) {
+            throw new Error(`Servidor da ROM respondeu HTTP ${response.status}`);
+          }
+
+          const contentType = (response.headers.get("content-type") || "").toLowerCase();
+          const contentLength = response.headers.get("content-length") || "desconhecido";
+          let bytes = new Uint8Array(await response.arrayBuffer());
+          if (parentUrl) {
+            const biosResponse = await fetch(new URL(parentUrl, location.origin), { cache: "no-store", credentials: "same-origin" });
+            if (!biosResponse.ok) throw new Error(`BIOS Neo Geo respondeu HTTP ${biosResponse.status}`);
+            bytes = await combinedZip(bytes, new Uint8Array(await biosResponse.arrayBuffer()));
+            log(`Pacote FBNeo combinado; asia-s3.rom renomeado para sp-s3.sp1 (${bytes.length} bytes)`);
+          }
+
+          log(`Download: ${bytes.length} bytes; Content-Type: ${contentType || "desconhecido"}; Header: ${contentLength}`);
+
+          if (!bytes.length) {
+            throw new Error("A ROM veio vazia.");
+          }
+
+          const isZip = bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b &&
+            ((bytes[2] === 0x03 && bytes[3] === 0x04) ||
+             (bytes[2] === 0x05 && bytes[3] === 0x06) ||
+             (bytes[2] === 0x07 && bytes[3] === 0x08));
+          const is7z = bytes.length >= 6 && bytes[0] === 0x37 && bytes[1] === 0x7a &&
+            bytes[2] === 0xbc && bytes[3] === 0xaf && bytes[4] === 0x27 && bytes[5] === 0x1c;
+          const isChd = bytes.length >= 8 && new TextDecoder().decode(bytes.slice(0, 8)) === "MComprHD";
+
+          log(`Formato detectado: ${isZip ? "ZIP" : is7z ? "7Z" : isChd ? "CHD" : "desconhecido"}`);
+
+          if (!(isZip || is7z || isChd)) {
+            const looksHtml = contentType.includes("text/html") ||
+              new TextDecoder().decode(bytes.slice(0, Math.min(bytes.length, 120))).toLowerCase().includes("<!doctype");
+            throw new Error(looksHtml
+              ? "O Google Drive devolveu uma página HTML em vez da ROM."
+              : "O arquivo recebido não é uma ROM ZIP/7Z/CHD válida.");
+          }
+
+          status.textContent = `INICIANDO FBNeo — ${cleanName}...`;
+          const romObjectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/zip" }));
+          window.EJS_player = "#game";
+          window.EJS_core = "fbneo";
+          window.EJS_gameName = cleanName;
+          window.EJS_gameUrl = romObjectUrl;
+          window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+          window.EJS_startOnLoad = true;
+          window.EJS_color = "#00e5ff";
+          window.EJS_backgroundColor = "#000";
+          log("Core selecionado: FinalBurn Neo (FBNeo)");
+
+          const numpadMap = {
+            Numpad8: "i",
+            Numpad2: "k",
+            Numpad4: "j",
+            Numpad6: "l"
+          };
+
+          const dispatchKey = (key, type) => {
+            const target = document.querySelector("canvas") || document;
+            const event = new KeyboardEvent(type, {
+              key,
+              code: key.length === 1 ? `Key${key.toUpperCase()}` : key,
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            });
+            target.dispatchEvent(event);
+          };
+
+          window.addEventListener("keydown", (event) => {
+            const mapped = numpadMap[event.code];
+            if (!mapped) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            dispatchKey(mapped, "keydown");
+          }, true);
+
+          window.addEventListener("keyup", (event) => {
+            const mapped = numpadMap[event.code];
+            if (!mapped) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            dispatchKey(mapped, "keyup");
+          }, true);
+
+          const gamepadState = new Map();
+          const gamepadKeys = [
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"],
+            ["i", "k", "j", "l"]
+          ];
+
+          const updateArcadeDirections = () => {
+            const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+            for (let player = 0; player < 2; player++) {
+              const pad = pads[player];
+              if (!pad) continue;
+
+              const x = Number(pad.axes?.[0] || 0);
+              const y = Number(pad.axes?.[1] || 0);
+              const threshold = 0.35;
+              const wanted = {
+                [gamepadKeys[player][0]]: y < -threshold,
+                [gamepadKeys[player][1]]: y > threshold,
+                [gamepadKeys[player][2]]: x < -threshold,
+                [gamepadKeys[player][3]]: x > threshold
+              };
+
+              let state = gamepadState.get(player);
+              if (!state) {
+                state = {};
+                gamepadState.set(player, state);
+              }
+
+              for (const [key, pressed] of Object.entries(wanted)) {
+                if (pressed === !!state[key]) continue;
+                state[key] = pressed;
+                dispatchKey(key, pressed ? "keydown" : "keyup");
+              }
+            }
+            requestAnimationFrame(updateArcadeDirections);
+          };
+          requestAnimationFrame(updateArcadeDirections);
+
+          const pressArcadeKey = (key, code, keyCode) => {
+            const target = document.querySelector("canvas") || document;
+            target.focus?.();
+            const event = new KeyboardEvent("keydown", {
+              key, code, bubbles: true, cancelable: true,
+              composed: true, keyCode, which: keyCode
+            });
+            for (const prop of ["keyCode", "which"]) {
+              try { Object.defineProperty(event, prop, { value: keyCode }); } catch {}
+            }
+            target.dispatchEvent(event);
+            setTimeout(() => target.dispatchEvent(new KeyboardEvent("keyup", {
+              key, code, bubbles: true, cancelable: true,
+              composed: true, keyCode, which: keyCode
+            })), 100);
+          };
+
+          const script = document.createElement("script");
+          script.src = "https://cdn.emulatorjs.org/stable/data/loader.js";
+          script.async = true;
+          script.onerror = () => fail("Core FBNeo não carregou do CDN do EmulatorJS");
+          document.head.appendChild(script);
+        } catch (error) {
+          fail(error?.message || "FALHA AO CARREGAR A ROM");
+          try { window.parent.postMessage({ type: "mga-emulator-error", message: error?.message || "Falha ao carregar a ROM." }, location.origin); } catch {}
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
